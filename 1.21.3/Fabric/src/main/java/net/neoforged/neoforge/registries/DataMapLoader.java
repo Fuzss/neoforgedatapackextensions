@@ -13,9 +13,9 @@ import com.mojang.serialization.JsonOps;
 import fuzs.neoforgedatapackextensions.impl.NeoForgeDataPackExtensions;
 import net.fabricmc.fabric.api.resource.IdentifiableResourceReloadListener;
 import net.minecraft.core.Holder;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.core.MappedRegistry;
 import net.minecraft.core.Registry;
-import net.minecraft.core.RegistryAccess;
 import net.minecraft.resources.FileToIdConverter;
 import net.minecraft.resources.RegistryOps;
 import net.minecraft.resources.ResourceKey;
@@ -24,6 +24,7 @@ import net.minecraft.server.packs.resources.PreparableReloadListener;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.tags.TagKey;
+import net.minecraft.util.profiling.Profiler;
 import net.minecraft.util.profiling.ProfilerFiller;
 import net.neoforged.neoforge.registries.datamaps.*;
 import org.slf4j.Logger;
@@ -40,20 +41,20 @@ public class DataMapLoader implements PreparableReloadListener, IdentifiableReso
     private static final Logger LOGGER = LogUtils.getLogger();
     public static final String PATH = "data_maps";
     private Map<ResourceKey<? extends Registry<?>>, LoadResult<?>> results;
-    private final RegistryAccess registryAccess;
+    private final HolderLookup.Provider registryAccess;
 
-    public DataMapLoader(RegistryAccess registryAccess) {
+    public DataMapLoader(HolderLookup.Provider registryAccess) {
         this.registryAccess = registryAccess;
     }
 
     @Override
-    public CompletableFuture<Void> reload(PreparationBarrier preparationBarrier, ResourceManager resourceManager, ProfilerFiller preparationsProfiler, ProfilerFiller reloadProfiler, Executor backgroundExecutor, Executor gameExecutor) {
-        return this.load(resourceManager, backgroundExecutor, preparationsProfiler).thenCompose(
+    public CompletableFuture<Void> reload(PreparationBarrier preparationBarrier, ResourceManager resourceManager, Executor backgroundExecutor, Executor gameExecutor) {
+        return this.load(resourceManager, backgroundExecutor, Profiler.get()).thenCompose(
                 preparationBarrier::wait).thenAcceptAsync(values -> this.results = values, gameExecutor);
     }
 
     public void apply() {
-        results.forEach((key, result) -> this.apply((MappedRegistry) registryAccess.registryOrThrow(key), result));
+        results.forEach((key, result) -> this.apply((MappedRegistry) registryAccess.lookupOrThrow(key), result));
 
         // Clear the intermediary maps and objects
         results = null;
@@ -74,7 +75,7 @@ public class DataMapLoader implements PreparableReloadListener, IdentifiableReso
         final Map<ResourceKey<R>, WithSource<T, R>> result = new IdentityHashMap<>();
         final BiConsumer<Either<TagKey<R>, ResourceKey<R>>, Consumer<Holder<R>>> valueResolver = (key, cons) -> key.ifLeft(
                 tag -> registry.getTagOrEmpty(tag).forEach(cons)).ifRight(
-                k -> cons.accept(registry.getHolderOrThrow(k)));
+                k -> cons.accept(registry.getOrThrow(k)));
         final DataMapValueMerger<R, T> merger = attachment instanceof AdvancedDataMapType<R, T, ?> adv ? adv.merger() :
                 DataMapValueMerger.defaultMerger();
         entries.forEach(entry -> {
@@ -134,11 +135,11 @@ public class DataMapLoader implements PreparableReloadListener, IdentifiableReso
         return NeoForgeDataPackExtensions.id(PATH);
     }
 
-    private static Map<ResourceKey<? extends Registry<?>>, LoadResult<?>> load(ResourceManager manager, ProfilerFiller profiler, RegistryAccess access) {
+    private static Map<ResourceKey<? extends Registry<?>>, LoadResult<?>> load(ResourceManager manager, ProfilerFiller profiler, HolderLookup.Provider access) {
         final RegistryOps<JsonElement> ops = RegistryOps.create(JsonOps.INSTANCE, access);
 
         final Map<ResourceKey<? extends Registry<?>>, LoadResult<?>> values = new HashMap<>();
-        access.registries().forEach(registryEntry -> {
+        access.listRegistries().forEach(registryEntry -> {
             final var registryKey = registryEntry.key();
             profiler.push("registry_data_maps/" + registryKey.location() + "/locating");
             final var fileToId = FileToIdConverter.json(PATH + "/" + getFolderLocation(registryKey.location()));

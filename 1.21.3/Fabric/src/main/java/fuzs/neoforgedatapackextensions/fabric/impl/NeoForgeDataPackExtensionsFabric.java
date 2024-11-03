@@ -15,7 +15,6 @@ import net.minecraft.core.RegistryAccess;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.ReloadableServerResources;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.ServerConfigurationPacketListenerImpl;
 import net.minecraft.server.packs.PackType;
@@ -40,8 +39,7 @@ public class NeoForgeDataPackExtensionsFabric implements ModInitializer {
         DataMapLoader[] dataMapLoader = new DataMapLoader[1];
         ResourceManagerHelper.get(PackType.SERVER_DATA).registerReloadListener(
                 NeoForgeDataPackExtensions.id(DataMapLoader.PATH), (HolderLookup.Provider registries) -> {
-                    return dataMapLoader[0] = new DataMapLoader(
-                            ((ReloadableServerResources.ConfigurableRegistryLookup) registries).registryAccess);
+                    return dataMapLoader[0] = new DataMapLoader(registries);
                 });
         CommonLifecycleEvents.TAGS_LOADED.register((RegistryAccess registries, boolean client) -> {
             if (!client) {
@@ -57,7 +55,7 @@ public class NeoForgeDataPackExtensionsFabric implements ModInitializer {
                 });
         ServerLifecycleEvents.SYNC_DATA_PACK_CONTENTS.register((ServerPlayer player, boolean joined) -> {
             RegistryManager.getDataMaps().forEach((registry, values) -> {
-                final var regOpt = player.getServer().overworld().registryAccess().registry(registry);
+                final var regOpt = player.getServer().overworld().registryAccess().lookup(registry);
                 if (regOpt.isEmpty()) return;
                 if (!ServerPlayNetworking.canSend(player, RegistryDataMapSyncPayload.TYPE)) {
                     return;

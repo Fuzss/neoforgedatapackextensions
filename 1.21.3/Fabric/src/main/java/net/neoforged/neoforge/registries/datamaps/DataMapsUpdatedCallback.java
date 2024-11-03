@@ -7,8 +7,8 @@ package net.neoforged.neoforge.registries.datamaps;
 
 import net.fabricmc.fabric.api.event.Event;
 import net.fabricmc.fabric.api.event.EventFactory;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.core.Registry;
-import net.minecraft.core.RegistryAccess;
 import net.minecraft.network.Connection;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.SimplePreparableReloadListener;
@@ -26,7 +26,7 @@ import net.minecraft.util.profiling.ProfilerFiller;
 @FunctionalInterface
 public interface DataMapsUpdatedCallback {
     Event<DataMapsUpdatedCallback> EVENT = EventFactory.createArrayBacked(DataMapsUpdatedCallback.class,
-            callbacks -> (RegistryAccess registryAccess, Registry<?> registry, UpdateCause cause) -> {
+            callbacks -> (HolderLookup.Provider registryAccess, Registry<?> registry, UpdateCause cause) -> {
                 for (DataMapsUpdatedCallback callback : callbacks) {
                     callback.onDataMapsUpdated(registryAccess, registry, cause);
                 }
@@ -38,7 +38,7 @@ public interface DataMapsUpdatedCallback {
      * @param registry       {@return the registry that had its data maps updated}
      * @param cause          {@return the reason for the update}
      */
-    void onDataMapsUpdated(RegistryAccess registryAccess, Registry<?> registry, UpdateCause cause);
+    void onDataMapsUpdated(HolderLookup.Provider registryAccess, Registry<?> registry, UpdateCause cause);
 
     enum UpdateCause {
         /**

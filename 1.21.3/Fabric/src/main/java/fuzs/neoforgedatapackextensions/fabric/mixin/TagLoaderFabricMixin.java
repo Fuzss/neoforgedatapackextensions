@@ -1,19 +1,20 @@
 package fuzs.neoforgedatapackextensions.fabric.mixin;
 
 import com.llamalad7.mixinextras.injector.ModifyReceiver;
-import com.mojang.datafixers.util.Either;
+import com.llamalad7.mixinextras.injector.v2.WrapWithCondition;
+import com.llamalad7.mixinextras.sugar.Local;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.Dynamic;
 import fuzs.neoforgedatapackextensions.fabric.impl.tags.RemovedTagEntry;
-import net.minecraft.tags.TagEntry;
 import net.minecraft.tags.TagFile;
 import net.minecraft.tags.TagLoader;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+import org.spongepowered.asm.mixin.injection.ModifyArg;
 
-import java.util.*;
+import java.util.List;
+import java.util.SequencedSet;
+import java.util.function.Consumer;
 
 @Mixin(value = TagLoader.class, priority = 800)
 abstract class TagLoaderFabricMixin<T> {
@@ -29,26 +30,21 @@ abstract class TagLoaderFabricMixin<T> {
         return RemovedTagEntry.CODEC;
     }
 
-    @Inject(
-            method = "build(Lnet/minecraft/tags/TagEntry$Lookup;Ljava/util/List;)Lcom/mojang/datafixers/util/Either;",
-            at = @At("HEAD"),
-            cancellable = true
+    @ModifyArg(
+            method = "tryBuildTag",
+            at = @At(
+                    value = "INVOKE",
+                    target = "Lnet/minecraft/tags/TagEntry;build(Lnet/minecraft/tags/TagEntry$Lookup;Ljava/util/function/Consumer;)Z"
+            )
     )
-    private void build(TagEntry.Lookup<T> lookup, List<TagLoader.EntryWithSource> entries, CallbackInfoReturnable<Either<Collection<TagLoader.EntryWithSource>, Collection<T>>> callback) {
-        // vanilla uses an immutable set builder, but that does not allow for removals
-        // just don't forget to make it immutable again at the end of the method
-        Set<T> builder = new LinkedHashSet<>();
-        List<TagLoader.EntryWithSource> list = new ArrayList<>();
+    private Consumer<T> tryBuildTag(Consumer<T> consumer, @Local SequencedSet<T> sequencedSet, @Local TagLoader.EntryWithSource entryWithSource) {
+        return entryWithSource.entry() instanceof RemovedTagEntry ? sequencedSet::remove : consumer;
+    }
 
-        for (TagLoader.EntryWithSource entry : entries) {
-            TagEntry tagEntry = entry.entry();
-            // this is changed from vanilla, implementation simply copied from Forge
-            if (!tagEntry.build(lookup, tagEntry instanceof RemovedTagEntry ? builder::remove : builder::add) &&
-                    !(tagEntry instanceof RemovedTagEntry)) {
-                list.add(entry);
-            }
-        }
-
-        callback.setReturnValue(list.isEmpty() ? Either.right(List.copyOf(builder)) : Either.left(list));
+    @WrapWithCondition(
+            method = "tryBuildTag", at = @At(value = "INVOKE", target = "Ljava/util/List;add(Ljava/lang/Object;)Z")
+    )
+    private boolean tryBuildTag(List<TagLoader.EntryWithSource> entries, Object entryWithSource) {
+        return !(((TagLoader.EntryWithSource) entryWithSource).entry() instanceof RemovedTagEntry);
     }
 }
