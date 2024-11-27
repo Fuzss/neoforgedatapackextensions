@@ -11,6 +11,7 @@
     "MappedRegistry\u0024LookupFabricMixin",
     "MappedRegistryFabricMixin",
     "RegistryFabricMixin",
+    "ReloadableServerResourcesFabricMixin",
     "TagLoaderFabricMixin"
   ],
   "client": [

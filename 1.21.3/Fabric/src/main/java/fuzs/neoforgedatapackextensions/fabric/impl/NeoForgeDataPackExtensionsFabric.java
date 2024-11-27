@@ -8,7 +8,6 @@ import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerConfigurationConnectionEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerConfigurationNetworking;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
-import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.Registry;
 import net.minecraft.core.RegistryAccess;
@@ -17,17 +16,21 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.ServerConfigurationPacketListenerImpl;
-import net.minecraft.server.packs.PackType;
+import net.minecraft.server.packs.resources.PreparableReloadListener;
 import net.neoforged.neoforge.network.configuration.RegistryDataMapNegotiation;
 import net.neoforged.neoforge.network.payload.KnownRegistryDataMapsPayload;
 import net.neoforged.neoforge.network.payload.KnownRegistryDataMapsReplyPayload;
 import net.neoforged.neoforge.network.payload.RegistryDataMapSyncPayload;
 import net.neoforged.neoforge.registries.DataMapLoader;
 import net.neoforged.neoforge.registries.RegistryManager;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
+import java.util.function.BiConsumer;
 
 public class NeoForgeDataPackExtensionsFabric implements ModInitializer {
+    @Nullable
+    private static DataMapLoader dataMapLoader;
 
     @Override
     public void onInitialize() {
@@ -36,23 +39,17 @@ public class NeoForgeDataPackExtensionsFabric implements ModInitializer {
     }
 
     private static void registerEventHandlers() {
-        DataMapLoader[] dataMapLoader = new DataMapLoader[1];
-        ResourceManagerHelper.get(PackType.SERVER_DATA).registerReloadListener(
-                NeoForgeDataPackExtensions.id(DataMapLoader.PATH), (HolderLookup.Provider registries) -> {
-                    return dataMapLoader[0] = new DataMapLoader(registries);
-                });
         CommonLifecycleEvents.TAGS_LOADED.register((RegistryAccess registries, boolean client) -> {
             if (!client) {
-                Objects.requireNonNull(dataMapLoader[0], "data map loader is null");
-                dataMapLoader[0].apply();
+                Objects.requireNonNull(dataMapLoader, "data map loader is null");
+                dataMapLoader.apply();
             }
         });
-        ServerConfigurationConnectionEvents.CONFIGURE.register(
-                (ServerConfigurationPacketListenerImpl handler, MinecraftServer server) -> {
-                    if (ServerConfigurationNetworking.canSend(handler, RegistryDataMapNegotiation.ID)) {
-                        handler.addTask(new RegistryDataMapNegotiation(handler));
-                    }
-                });
+        ServerConfigurationConnectionEvents.CONFIGURE.register((ServerConfigurationPacketListenerImpl handler, MinecraftServer server) -> {
+            if (ServerConfigurationNetworking.canSend(handler, RegistryDataMapNegotiation.ID)) {
+                handler.addTask(new RegistryDataMapNegotiation(handler));
+            }
+        });
         ServerLifecycleEvents.SYNC_DATA_PACK_CONTENTS.register((ServerPlayer player, boolean joined) -> {
             RegistryManager.getDataMaps().forEach((registry, values) -> {
                 final var regOpt = player.getServer().overworld().registryAccess().lookup(registry);
@@ -64,12 +61,17 @@ public class NeoForgeDataPackExtensionsFabric implements ModInitializer {
                     // Note: don't send data maps over in-memory connections, else the client-side handling will wipe non-synced data maps.
                     return;
                 }
-                final var playerMaps = player.connection.connection.channel.attr(
-                        RegistryManager.ATTRIBUTE_KNOWN_DATA_MAPS).get();
+                final var playerMaps = player.connection.connection.channel.attr(RegistryManager.ATTRIBUTE_KNOWN_DATA_MAPS)
+                        .get();
                 if (playerMaps == null) return; // Skip gametest players for instance
                 handleSync(player, regOpt.get(), playerMaps.getOrDefault(registry, List.of()));
             });
         });
+    }
+
+    public static void onAddDataPackReloadListeners(RegistryAccess fullRegistries, HolderLookup.Provider lookupWithUpdatedTags, BiConsumer<ResourceLocation, PreparableReloadListener> consumer) {
+        consumer.accept(NeoForgeDataPackExtensions.id(DataMapLoader.PATH),
+                dataMapLoader = new DataMapLoader(fullRegistries));
     }
 
     private static <T> void handleSync(ServerPlayer player, Registry<T> registry, Collection<ResourceLocation> attachments) {
@@ -86,17 +88,13 @@ public class NeoForgeDataPackExtensionsFabric implements ModInitializer {
     }
 
     private static void registerNetworkMessages() {
-        PayloadTypeRegistry.configurationC2S().register(KnownRegistryDataMapsReplyPayload.TYPE,
-                KnownRegistryDataMapsReplyPayload.STREAM_CODEC
-        );
-        PayloadTypeRegistry.configurationS2C().register(KnownRegistryDataMapsPayload.TYPE,
-                KnownRegistryDataMapsPayload.STREAM_CODEC
-        );
-        PayloadTypeRegistry.playS2C().register(RegistryDataMapSyncPayload.TYPE,
-                RegistryDataMapSyncPayload.STREAM_CODEC
-        );
+        PayloadTypeRegistry.configurationC2S()
+                .register(KnownRegistryDataMapsReplyPayload.TYPE, KnownRegistryDataMapsReplyPayload.STREAM_CODEC);
+        PayloadTypeRegistry.configurationS2C()
+                .register(KnownRegistryDataMapsPayload.TYPE, KnownRegistryDataMapsPayload.STREAM_CODEC);
+        PayloadTypeRegistry.playS2C()
+                .register(RegistryDataMapSyncPayload.TYPE, RegistryDataMapSyncPayload.STREAM_CODEC);
         ServerConfigurationNetworking.registerGlobalReceiver(KnownRegistryDataMapsReplyPayload.TYPE,
-                RegistryManager::handleKnownDataMapsReply
-        );
+                RegistryManager::handleKnownDataMapsReply);
     }
 }

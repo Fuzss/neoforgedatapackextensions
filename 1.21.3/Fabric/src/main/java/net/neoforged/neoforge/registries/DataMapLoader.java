@@ -10,12 +10,10 @@ import com.google.gson.JsonParser;
 import com.mojang.datafixers.util.Either;
 import com.mojang.logging.LogUtils;
 import com.mojang.serialization.JsonOps;
-import fuzs.neoforgedatapackextensions.impl.NeoForgeDataPackExtensions;
-import net.fabricmc.fabric.api.resource.IdentifiableResourceReloadListener;
 import net.minecraft.core.Holder;
-import net.minecraft.core.HolderLookup;
 import net.minecraft.core.MappedRegistry;
 import net.minecraft.core.Registry;
+import net.minecraft.core.RegistryAccess;
 import net.minecraft.resources.FileToIdConverter;
 import net.minecraft.resources.RegistryOps;
 import net.minecraft.resources.ResourceKey;
@@ -37,20 +35,21 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 @SuppressWarnings({"rawtypes", "unchecked"})
-public class DataMapLoader implements PreparableReloadListener, IdentifiableResourceReloadListener {
+public class DataMapLoader implements PreparableReloadListener {
     private static final Logger LOGGER = LogUtils.getLogger();
     public static final String PATH = "data_maps";
     private Map<ResourceKey<? extends Registry<?>>, LoadResult<?>> results;
-    private final HolderLookup.Provider registryAccess;
+    private final RegistryAccess registryAccess;
 
-    public DataMapLoader(HolderLookup.Provider registryAccess) {
+    public DataMapLoader(RegistryAccess registryAccess) {
         this.registryAccess = registryAccess;
     }
 
     @Override
     public CompletableFuture<Void> reload(PreparationBarrier preparationBarrier, ResourceManager resourceManager, Executor backgroundExecutor, Executor gameExecutor) {
-        return this.load(resourceManager, backgroundExecutor, Profiler.get()).thenCompose(
-                preparationBarrier::wait).thenAcceptAsync(values -> this.results = values, gameExecutor);
+        return this.load(resourceManager, backgroundExecutor, Profiler.get())
+                .thenCompose(preparationBarrier::wait)
+                .thenAcceptAsync(values -> this.results = values, gameExecutor);
     }
 
     public void apply() {
@@ -62,11 +61,11 @@ public class DataMapLoader implements PreparableReloadListener, IdentifiableReso
 
     private <T> void apply(MappedRegistry<T> registry, LoadResult<T> result) {
         ((IRegistryWithData<T>) registry).getDataMaps().clear();
-        result.results().forEach((key, entries) -> ((IRegistryWithData<T>) registry).getDataMaps()
-                .put(key, this.buildDataMap(registry, key, (List) entries)));
-        DataMapsUpdatedCallback.EVENT.invoker().onDataMapsUpdated(registryAccess, registry,
-                DataMapsUpdatedCallback.UpdateCause.SERVER_RELOAD
-        );
+        result.results()
+                .forEach((key, entries) -> ((IRegistryWithData<T>) registry).getDataMaps()
+                        .put(key, this.buildDataMap(registry, key, (List) entries)));
+        DataMapsUpdatedCallback.EVENT.invoker()
+                .onDataMapsUpdated(registryAccess, registry, DataMapsUpdatedCallback.UpdateCause.SERVER_RELOAD);
     }
 
     private <T, R> Map<ResourceKey<R>, T> buildDataMap(Registry<R> registry, DataMapType<R, T> attachment, List<DataMapFile<T, R>> entries) {
@@ -74,8 +73,7 @@ public class DataMapLoader implements PreparableReloadListener, IdentifiableReso
         }
         final Map<ResourceKey<R>, WithSource<T, R>> result = new IdentityHashMap<>();
         final BiConsumer<Either<TagKey<R>, ResourceKey<R>>, Consumer<Holder<R>>> valueResolver = (key, cons) -> key.ifLeft(
-                tag -> registry.getTagOrEmpty(tag).forEach(cons)).ifRight(
-                k -> cons.accept(registry.getOrThrow(k)));
+                tag -> registry.getTagOrEmpty(tag).forEach(cons)).ifRight(k -> cons.accept(registry.getOrThrow(k)));
         final DataMapValueMerger<R, T> merger = attachment instanceof AdvancedDataMapType<R, T, ?> adv ? adv.merger() :
                 DataMapValueMerger.defaultMerger();
         entries.forEach(entry -> {
@@ -93,10 +91,12 @@ public class DataMapLoader implements PreparableReloadListener, IdentifiableReso
                     if (oldValue == null || newValue.replace()) {
                         result.put(key, new WithSource<>(newValue.value(), tKey));
                     } else {
-                        result.put(key, new WithSource<>(
-                                merger.merge(registry, oldValue.source(), oldValue.attachment(), tKey,
-                                        newValue.value()
-                                ), tKey));
+                        result.put(key,
+                                new WithSource<>(merger.merge(registry,
+                                        oldValue.source(),
+                                        oldValue.attachment(),
+                                        tKey,
+                                        newValue.value()), tKey));
                     }
                 });
             });
@@ -106,9 +106,9 @@ public class DataMapLoader implements PreparableReloadListener, IdentifiableReso
                     final var key = holder.unwrapKey().orElseThrow();
                     final var oldValue = result.get(key);
                     if (oldValue != null) {
-                        final var newValue = trRemoval.remover().get().remove(oldValue.attachment(), registry,
-                                oldValue.source(), holder.value()
-                        );
+                        final var newValue = trRemoval.remover()
+                                .get()
+                                .remove(oldValue.attachment(), registry, oldValue.source(), holder.value());
                         if (newValue.isEmpty()) {
                             result.remove(key);
                         } else {
@@ -130,16 +130,11 @@ public class DataMapLoader implements PreparableReloadListener, IdentifiableReso
         return CompletableFuture.supplyAsync(() -> load(manager, profiler, registryAccess), executor);
     }
 
-    @Override
-    public ResourceLocation getFabricId() {
-        return NeoForgeDataPackExtensions.id(PATH);
-    }
-
-    private static Map<ResourceKey<? extends Registry<?>>, LoadResult<?>> load(ResourceManager manager, ProfilerFiller profiler, HolderLookup.Provider access) {
+    private static Map<ResourceKey<? extends Registry<?>>, LoadResult<?>> load(ResourceManager manager, ProfilerFiller profiler, RegistryAccess access) {
         final RegistryOps<JsonElement> ops = RegistryOps.create(JsonOps.INSTANCE, access);
 
         final Map<ResourceKey<? extends Registry<?>>, LoadResult<?>> values = new HashMap<>();
-        access.listRegistries().forEach(registryEntry -> {
+        access.registries().forEach(registryEntry -> {
             final var registryKey = registryEntry.key();
             profiler.push("registry_data_maps/" + registryKey.location() + "/locating");
             final var fileToId = FileToIdConverter.json(PATH + "/" + getFolderLocation(registryKey.location()));
@@ -150,14 +145,13 @@ public class DataMapLoader implements PreparableReloadListener, IdentifiableReso
                 final var attachment = RegistryManager.getDataMap((ResourceKey) registryKey, attachmentId);
                 if (attachment == null) {
                     LOGGER.warn("Found data map file for non-existent data map type '{}' on registry '{}'.",
-                            attachmentId, registryKey.location()
-                    );
+                            attachmentId,
+                            registryKey.location());
                     continue;
                 }
                 profiler.popPush("registry_data_maps/" + registryKey.location() + "/" + attachmentId + "/loading");
                 values.computeIfAbsent(registryKey, k -> new LoadResult<>(new HashMap<>())).results.put(attachment,
-                        readData(ops, attachment, (ResourceKey) registryKey, entry.getValue())
-                );
+                        readData(ops, attachment, (ResourceKey) registryKey, entry.getValue()));
             }
             profiler.pop();
         });
@@ -178,9 +172,10 @@ public class DataMapLoader implements PreparableReloadListener, IdentifiableReso
                 JsonElement jsonelement = JsonParser.parseReader(reader);
                 entries.add(codec.decode(ops, jsonelement).getOrThrow().getFirst());
             } catch (Exception exception) {
-                LOGGER.error("Could not read data map of type {} for registry {}", attachmentType.id(), registryKey,
-                        exception
-                );
+                LOGGER.error("Could not read data map of type {} for registry {}",
+                        attachmentType.id(),
+                        registryKey,
+                        exception);
             }
         }
         return entries;
