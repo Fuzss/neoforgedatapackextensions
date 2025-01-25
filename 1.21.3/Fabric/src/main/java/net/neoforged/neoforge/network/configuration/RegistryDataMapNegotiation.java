@@ -5,6 +5,7 @@
 
 package net.neoforged.neoforge.network.configuration;
 
+import fuzs.neoforgedatapackextensions.impl.NeoForgeDataPackExtensions;
 import net.fabricmc.fabric.api.networking.v1.ServerConfigurationNetworking;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.Registry;
@@ -28,7 +29,7 @@ import java.util.function.Consumer;
 
 @ApiStatus.Internal
 public record RegistryDataMapNegotiation(ServerConfigurationPacketListenerImpl listener) implements ConfigurationTask {
-    public static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath("neoforge", "registry_data_map_negotiation");
+    public static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath(NeoForgeDataPackExtensions.MOD_ID, "registry_data_map_negotiation");
     public static final Type TYPE = new Type(ID.toString());
 
     @Override

@@ -11,6 +11,7 @@ import com.google.gson.JsonElement;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
 import com.mojang.serialization.JsonOps;
+import fuzs.neoforgedatapackextensions.impl.NeoForgeDataPackExtensions;
 import io.netty.handler.codec.DecoderException;
 import io.netty.handler.codec.EncoderException;
 import net.minecraft.core.Registry;
@@ -35,7 +36,8 @@ import java.util.function.BiFunction;
 @SuppressWarnings({ "unchecked", "rawtypes" })
 public record RegistryDataMapSyncPayload<T>(ResourceKey<? extends Registry<T>> registryKey,
                                             Map<ResourceLocation, Map<ResourceKey<T>, ?>> dataMaps) implements CustomPacketPayload {
-    public static final Type<RegistryDataMapSyncPayload<?>> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath("neoforge", "registry_data_map_sync"));
+    public static final Type<RegistryDataMapSyncPayload<?>> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(
+            NeoForgeDataPackExtensions.MOD_ID, "registry_data_map_sync"));
     public static final StreamCodec<RegistryFriendlyByteBuf, RegistryDataMapSyncPayload<?>> STREAM_CODEC = StreamCodec.ofMember(
             RegistryDataMapSyncPayload::write, RegistryDataMapSyncPayload::decode);
 
