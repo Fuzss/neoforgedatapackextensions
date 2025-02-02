@@ -31,10 +31,9 @@ import java.io.Reader;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
-@SuppressWarnings({"rawtypes", "unchecked"})
+@SuppressWarnings({ "rawtypes", "unchecked" })
 public class DataMapLoader implements PreparableReloadListener {
     private static final Logger LOGGER = LogUtils.getLogger();
     public static final String PATH = "data_maps";
@@ -69,13 +68,9 @@ public class DataMapLoader implements PreparableReloadListener {
     }
 
     private <T, R> Map<ResourceKey<R>, T> buildDataMap(Registry<R> registry, DataMapType<R, T> attachment, List<DataMapFile<T, R>> entries) {
-        record WithSource<T, R>(T attachment, Either<TagKey<R>, ResourceKey<R>> source) {
-        }
+        record WithSource<T, R>(T attachment, Either<TagKey<R>, ResourceKey<R>> source) {}
         final Map<ResourceKey<R>, WithSource<T, R>> result = new IdentityHashMap<>();
-        final BiConsumer<Either<TagKey<R>, ResourceKey<R>>, Consumer<Holder<R>>> valueResolver = (key, cons) -> key.ifLeft(
-                tag -> registry.getTagOrEmpty(tag).forEach(cons)).ifRight(k -> cons.accept(registry.getOrThrow(k)));
-        final DataMapValueMerger<R, T> merger = attachment instanceof AdvancedDataMapType<R, T, ?> adv ? adv.merger() :
-                DataMapValueMerger.defaultMerger();
+        final DataMapValueMerger<R, T> merger = attachment instanceof AdvancedDataMapType<R, T, ?> adv ? adv.merger() : DataMapValueMerger.defaultMerger();
         entries.forEach(entry -> {
             if (entry.replace()) {
                 result.clear();
@@ -84,46 +79,55 @@ public class DataMapLoader implements PreparableReloadListener {
             entry.values().forEach((tKey, value) -> {
                 if (value.isEmpty()) return;
 
-                valueResolver.accept(tKey, holder -> {
+                resolve(registry, tKey, true, holder -> {
                     final var newValue = value.get();
-                    final var key = holder.unwrapKey().orElseThrow();
+                    final var key = holder.unwrapKey().orElse(null);
                     final var oldValue = result.get(key);
                     if (oldValue == null || newValue.replace()) {
                         result.put(key, new WithSource<>(newValue.value(), tKey));
                     } else {
-                        result.put(key,
-                                new WithSource<>(merger.merge(registry,
-                                        oldValue.source(),
-                                        oldValue.attachment(),
-                                        tKey,
-                                        newValue.value()), tKey));
+                        result.put(key, new WithSource<>(merger.merge(registry, oldValue.source(), oldValue.attachment(), tKey, newValue.value()), tKey));
                     }
                 });
             });
 
-            entry.removals().forEach(trRemoval -> valueResolver.accept(trRemoval.key(), holder -> {
-                if (trRemoval.remover().isPresent()) {
-                    final var key = holder.unwrapKey().orElseThrow();
-                    final var oldValue = result.get(key);
-                    if (oldValue != null) {
-                        final var newValue = trRemoval.remover()
-                                .get()
-                                .remove(oldValue.attachment(), registry, oldValue.source(), holder.value());
-                        if (newValue.isEmpty()) {
-                            result.remove(key);
-                        } else {
-                            result.put(key, new WithSource<>(newValue.get(), oldValue.source()));
+            for (var removal : entry.removals()) {
+                if (removal.remover().isPresent()) {
+                    var remover = removal.remover().orElseThrow();
+                    resolve(registry, removal.key(), false, holder -> {
+                        final var key = holder.unwrapKey().orElse(null);
+                        final var oldValue = result.get(key);
+                        if (oldValue != null) {
+                            final var newValue = remover.remove(oldValue.attachment(), registry, oldValue.source(), holder.value());
+                            if (newValue.isEmpty()) {
+                                result.remove(key);
+                            } else {
+                                result.put(key, new WithSource<>(newValue.get(), oldValue.source()));
+                            }
                         }
-                    }
+                    });
                 } else {
-                    result.remove(holder.unwrapKey().orElseThrow());
+                    resolve(registry, removal.key(), false, holder -> result.remove(holder.unwrapKey().orElse(null)));
                 }
-            }));
+            }
         });
         final Map<ResourceKey<R>, T> newMap = new IdentityHashMap<>();
         result.forEach((key, val) -> newMap.put(key, val.attachment()));
 
         return newMap;
+    }
+
+    private <R> void resolve(Registry<R> registry, Either<TagKey<R>, ResourceKey<R>> value, boolean required, Consumer<Holder<R>> consumer) {
+        if (value.left().isPresent()) {
+            registry.getTagOrEmpty(value.left().orElseThrow()).forEach(consumer);
+        } else {
+            var object = registry.get(value.right().orElseThrow());
+            if (object.isPresent()) {
+                consumer.accept(object.get());
+            } else if (required) {
+                LOGGER.error("Object with ID {} specified in data map for registry {} doesn't exist", value.right().orElseThrow().location(), registry.key().location());
+            }
+        }
     }
 
     private CompletableFuture<Map<ResourceKey<? extends Registry<?>>, LoadResult<?>>> load(ResourceManager manager, Executor executor, ProfilerFiller profiler) {
@@ -138,20 +142,17 @@ public class DataMapLoader implements PreparableReloadListener {
             final var registryKey = registryEntry.key();
             profiler.push("registry_data_maps/" + registryKey.location() + "/locating");
             final var fileToId = FileToIdConverter.json(PATH + "/" + getFolderLocation(registryKey.location()));
-            for (Map.Entry<ResourceLocation, List<Resource>> entry : fileToId.listMatchingResourceStacks(manager)
-                    .entrySet()) {
+            for (Map.Entry<ResourceLocation, List<Resource>> entry : fileToId.listMatchingResourceStacks(manager).entrySet()) {
                 ResourceLocation key = entry.getKey();
                 final ResourceLocation attachmentId = fileToId.fileToId(key);
                 final var attachment = RegistryManager.getDataMap((ResourceKey) registryKey, attachmentId);
                 if (attachment == null) {
-                    LOGGER.warn("Found data map file for non-existent data map type '{}' on registry '{}'.",
-                            attachmentId,
-                            registryKey.location());
+                    LOGGER.warn("Found data map file for non-existent data map type '{}' on registry '{}'.", attachmentId, registryKey.location());
                     continue;
                 }
                 profiler.popPush("registry_data_maps/" + registryKey.location() + "/" + attachmentId + "/loading");
-                values.computeIfAbsent(registryKey, k -> new LoadResult<>(new HashMap<>())).results.put(attachment,
-                        readData(ops, attachment, (ResourceKey) registryKey, entry.getValue()));
+                values.computeIfAbsent(registryKey, k -> new LoadResult<>(new HashMap<>())).results.put(attachment, readData(
+                        ops, attachment, (ResourceKey) registryKey, entry.getValue()));
             }
             profiler.pop();
         });
@@ -160,8 +161,7 @@ public class DataMapLoader implements PreparableReloadListener {
     }
 
     public static String getFolderLocation(ResourceLocation registryId) {
-        return (registryId.getNamespace().equals(ResourceLocation.DEFAULT_NAMESPACE) ? "" :
-                registryId.getNamespace() + "/") + registryId.getPath();
+        return (registryId.getNamespace().equals(ResourceLocation.DEFAULT_NAMESPACE) ? "" : registryId.getNamespace() + "/") + registryId.getPath();
     }
 
     private static <A, T> List<DataMapFile<A, T>> readData(RegistryOps<JsonElement> ops, DataMapType<T, A> attachmentType, ResourceKey<Registry<T>> registryKey, List<Resource> resources) {
@@ -172,15 +172,11 @@ public class DataMapLoader implements PreparableReloadListener {
                 JsonElement jsonelement = JsonParser.parseReader(reader);
                 entries.add(codec.decode(ops, jsonelement).getOrThrow().getFirst());
             } catch (Exception exception) {
-                LOGGER.error("Could not read data map of type {} for registry {}",
-                        attachmentType.id(),
-                        registryKey,
-                        exception);
+                LOGGER.error("Could not read data map of type {} for registry {}", attachmentType.id(), registryKey, exception);
             }
         }
         return entries;
     }
 
-    private record LoadResult<T>(Map<DataMapType<T, ?>, List<DataMapFile<?, T>>> results) {
-    }
+    private record LoadResult<T>(Map<DataMapType<T, ?>, List<DataMapFile<?, T>>> results) {}
 }
