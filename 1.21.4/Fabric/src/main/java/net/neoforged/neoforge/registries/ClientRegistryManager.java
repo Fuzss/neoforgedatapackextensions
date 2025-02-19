@@ -20,8 +20,8 @@ import net.minecraft.resources.ResourceLocation;
 import net.neoforged.neoforge.network.payload.KnownRegistryDataMapsPayload;
 import net.neoforged.neoforge.network.payload.KnownRegistryDataMapsReplyPayload;
 import net.neoforged.neoforge.network.payload.RegistryDataMapSyncPayload;
-import net.neoforged.neoforge.registries.datamaps.DataMapsUpdatedCallback;
-import net.neoforged.neoforge.registries.datamaps.IRegistryWithData;
+import fuzs.neoforgedatapackextensions.fabric.api.v1.DataMapsUpdatedCallback;
+import fuzs.neoforgedatapackextensions.fabric.impl.registries.datamaps.IRegistryWithData;
 import org.jetbrains.annotations.ApiStatus;
 import org.slf4j.Logger;
 
@@ -38,8 +38,8 @@ public class ClientRegistryManager {
                 var regAccess = Minecraft.getInstance().level.registryAccess();
                 final MappedRegistry<R> registry = (MappedRegistry<R>) regAccess
                         .lookupOrThrow(payload.registryKey());
-                ((IRegistryWithData<R>) registry).getDataMaps().clear();
-                payload.dataMaps().forEach((attachKey, maps) -> ((IRegistryWithData<R>) registry).getDataMaps().put(RegistryManager.getDataMap(payload.registryKey(), attachKey), Collections.unmodifiableMap(maps)));
+                ((IRegistryWithData<R>) registry).neoforgedatapackextensions$getDataMaps().clear();
+                payload.dataMaps().forEach((attachKey, maps) -> ((IRegistryWithData<R>) registry).neoforgedatapackextensions$getDataMaps().put(RegistryManager.getDataMap(payload.registryKey(), attachKey), Collections.unmodifiableMap(maps)));
                 DataMapsUpdatedCallback.EVENT.invoker().onDataMapsUpdated(regAccess, registry, DataMapsUpdatedCallback.UpdateCause.CLIENT_SYNC);
             } catch (Throwable t) {
                 LOGGER.error("Failed to handle registry data map sync: ", t);

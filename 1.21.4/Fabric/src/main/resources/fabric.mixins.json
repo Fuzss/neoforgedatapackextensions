@@ -15,6 +15,7 @@
     "TagLoaderFabricMixin"
   ],
   "client": [
+    "client.MinecraftFabricMixin"
   ],
   "injectors": {
     "defaultRequire": 1

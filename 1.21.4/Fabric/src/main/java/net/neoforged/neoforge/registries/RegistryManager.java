@@ -5,6 +5,7 @@
 
 package net.neoforged.neoforge.registries;
 
+import fuzs.neoforgedatapackextensions.impl.NeoForgeDataPackExtensions;
 import io.netty.util.AttributeKey;
 import net.fabricmc.fabric.api.networking.v1.ServerConfigurationNetworking;
 import net.minecraft.core.Registry;
@@ -46,28 +47,38 @@ public class RegistryManager {
      * @param <T>  the type of the data map
      * @param <R>  the type of the registry
      * @throws IllegalArgumentException      if a type with the same ID has already been registered for that registry
-     * @throws UnsupportedOperationException if the registry is a non-synced datapack registry and the data map is synced
+     * @throws UnsupportedOperationException if the registry is a non-synced datapack registry and the data map is
+     *                                       synced
      */
     public static <T, R> void registerDataMap(DataMapType<R, T> type) {
         final var registry = type.registryKey();
         if (RegistryDataLoader.WORLDGEN_REGISTRIES.stream().anyMatch(data -> data.key().equals(registry))) {
-            if (type.networkCodec() != null && RegistryDataLoader.SYNCHRONIZED_REGISTRIES.stream().noneMatch(data -> data.key().equals(registry))) {
-                throw new UnsupportedOperationException("Cannot register synced data map " + type.id() + " for datapack registry " + registry.location() + " that is not synced!");
+            if (type.networkCodec() != null && RegistryDataLoader.SYNCHRONIZED_REGISTRIES.stream()
+                    .noneMatch(data -> data.key().equals(registry))) {
+                throw new UnsupportedOperationException(
+                        "Cannot register synced data map " + type.id() + " for datapack registry " +
+                                registry.location() + " that is not synced!");
             }
         }
 
         final var map = dataMaps.computeIfAbsent((ResourceKey) registry, k -> new HashMap<>());
         if (map.containsKey(type.id())) {
-            throw new IllegalArgumentException("Tried to register data map type with ID " + type.id() + " to registry " + registry.location() + " twice");
+            throw new IllegalArgumentException(
+                    "Tried to register data map type with ID " + type.id() + " to registry " + registry.location() +
+                            " twice");
         }
         map.put(type.id(), type);
     }
 
-    public static final AttributeKey<Map<ResourceKey<? extends Registry<?>>, Collection<ResourceLocation>>> ATTRIBUTE_KNOWN_DATA_MAPS = AttributeKey.valueOf("neoforge:known_data_maps");
+    public static final AttributeKey<Map<ResourceKey<? extends Registry<?>>, Collection<ResourceLocation>>> ATTRIBUTE_KNOWN_DATA_MAPS = AttributeKey.valueOf(
+            NeoForgeDataPackExtensions.id("known_data_maps").toString());
 
     @ApiStatus.Internal
     public static void handleKnownDataMapsReply(final KnownRegistryDataMapsReplyPayload payload, final ServerConfigurationNetworking.Context context) {
-        context.networkHandler().connection.channel.pipeline().lastContext().attr(ATTRIBUTE_KNOWN_DATA_MAPS).set(payload.dataMaps());
+        context.networkHandler().connection.channel.pipeline()
+                .lastContext()
+                .attr(ATTRIBUTE_KNOWN_DATA_MAPS)
+                .set(payload.dataMaps());
         context.networkHandler().completeTask(RegistryDataMapNegotiation.TYPE);
     }
 }

@@ -46,9 +46,8 @@ public class NeoForgeDataPackExtensionsFabric implements ModInitializer {
             }
         });
         ServerConfigurationConnectionEvents.CONFIGURE.register((ServerConfigurationPacketListenerImpl handler, MinecraftServer server) -> {
-            if (ServerConfigurationNetworking.canSend(handler, RegistryDataMapNegotiation.ID)) {
-                handler.addTask(new RegistryDataMapNegotiation(handler));
-            }
+            // These can always be registered, they detect the listener connection type internally and will skip themselves.
+            handler.addTask(new RegistryDataMapNegotiation(handler));
         });
         ServerLifecycleEvents.SYNC_DATA_PACK_CONTENTS.register((ServerPlayer player, boolean joined) -> {
             RegistryManager.getDataMaps().forEach((registry, values) -> {
@@ -80,7 +79,7 @@ public class NeoForgeDataPackExtensionsFabric implements ModInitializer {
         attachments.forEach(key -> {
             final var attach = RegistryManager.getDataMap(registry.key(), key);
             if (attach == null || attach.networkCodec() == null) return;
-            att.put(key, registry.getDataMap(attach));
+            att.put(key, registry.neoforgedatapackextensions$getDataMap(attach));
         });
         if (!att.isEmpty()) {
             ServerPlayNetworking.send(player, new RegistryDataMapSyncPayload<>(registry.key(), att));

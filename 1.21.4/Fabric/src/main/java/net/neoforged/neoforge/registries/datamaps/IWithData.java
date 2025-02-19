@@ -13,6 +13,7 @@ import org.jetbrains.annotations.Nullable;
  * @param <R> the type of the object
  */
 public interface IWithData<R> {
+
     /**
      * {@return the data of the given type that is attached to this object, or {@code null} if one isn't}
      *
@@ -20,7 +21,7 @@ public interface IWithData<R> {
      * @param <T>  the type of the data
      */
     @Nullable
-    default <T> T getData(DataMapType<R, T> type) {
+    default <T> T neoforgedatapackextensions$getData(DataMapType<R, T> type) {
         return null;
     }
 }

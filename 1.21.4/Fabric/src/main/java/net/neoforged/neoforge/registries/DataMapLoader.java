@@ -10,6 +10,8 @@ import com.google.gson.JsonParser;
 import com.mojang.datafixers.util.Either;
 import com.mojang.logging.LogUtils;
 import com.mojang.serialization.JsonOps;
+import fuzs.neoforgedatapackextensions.fabric.api.v1.DataMapsUpdatedCallback;
+import fuzs.neoforgedatapackextensions.fabric.impl.registries.datamaps.IRegistryWithData;
 import net.minecraft.core.Holder;
 import net.minecraft.core.MappedRegistry;
 import net.minecraft.core.Registry;
@@ -59,9 +61,9 @@ public class DataMapLoader implements PreparableReloadListener {
     }
 
     private <T> void apply(MappedRegistry<T> registry, LoadResult<T> result) {
-        ((IRegistryWithData<T>) registry).getDataMaps().clear();
+        ((IRegistryWithData<T>) registry).neoforgedatapackextensions$getDataMaps().clear();
         result.results()
-                .forEach((key, entries) -> ((IRegistryWithData<T>) registry).getDataMaps()
+                .forEach((key, entries) -> ((IRegistryWithData<T>) registry).neoforgedatapackextensions$getDataMaps()
                         .put(key, this.buildDataMap(registry, key, (List) entries)));
         DataMapsUpdatedCallback.EVENT.invoker()
                 .onDataMapsUpdated(registryAccess, registry, DataMapsUpdatedCallback.UpdateCause.SERVER_RELOAD);

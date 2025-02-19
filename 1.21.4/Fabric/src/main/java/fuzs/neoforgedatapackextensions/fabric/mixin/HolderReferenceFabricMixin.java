@@ -21,7 +21,7 @@ abstract class HolderReferenceFabricMixin<T> implements IWithData<T> {
     public abstract ResourceKey<T> key();
 
     @Override
-    public <T1> @Nullable T1 getData(DataMapType<T, T1> type) {
-        return this.owner instanceof HolderLookup.RegistryLookup<T> lookup ? lookup.getData(type, this.key()) : null;
+    public <T1> @Nullable T1 neoforgedatapackextensions$getData(DataMapType<T, T1> type) {
+        return this.owner instanceof HolderLookup.RegistryLookup<T> lookup ? lookup.neoforgedatapackextensions$getData(type, this.key()) : null;
     }
 }
