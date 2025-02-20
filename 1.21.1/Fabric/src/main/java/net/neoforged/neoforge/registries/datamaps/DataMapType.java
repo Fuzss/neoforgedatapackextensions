@@ -15,17 +15,16 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Objects;
 
 /**
- * A registry data map contains data-driven object that can be attached to a registry object. <p>
- * Data maps are registered to the {@link RegisterDataMapTypesEvent}. <p>
- * They are loaded from JSON files located at:
+ * A registry data map contains data-driven object that can be attached to a registry object. <p> Data maps are
+ * registered to the {@link RegisterDataMapTypesEvent}. <p> They are loaded from JSON files located at:
  *
  * <pre>{@code
  * <map namespace>/data_maps/<registry namespace>/<registry path>/<map path>.json
  * }</pre>
- * 
+ *
  * <p>
- * The {@code registry namespace} is omitted if it is {@value ResourceLocation#DEFAULT_NAMESPACE}. <br>
- * The structure of the json file is as follows:
+ * The {@code registry namespace} is omitted if it is {@value ResourceLocation#DEFAULT_NAMESPACE}. <br> The structure of
+ * the json file is as follows:
  *
  * <pre>
  * <code>
@@ -42,7 +41,8 @@ import java.util.Objects;
  * </pre>
  *
  * </code>
- * Data maps support conditions both JSON-level and attachment-level through the {@value ConditionalOps#CONDITIONAL_VALUE_KEY} object.
+ * Data maps support conditions both JSON-level and attachment-level through the
+ * {@value ConditionalOps#CONDITIONAL_VALUE_KEY} object.
  * <p>
  * Data maps may be synced by specifying a {@link #networkCodec()}. If the map is {@link #mandatorySync() mandatory},
  * then vanilla clients (or any client that doesn't support this map) will not be able to connect.
@@ -51,8 +51,11 @@ import java.util.Objects;
  * Both datapack registries and normal, built-in registries support data maps.
  *
  * <p>
- * You can access a data map using {@link net.neoforged.neoforge.registries.IRegistryExtension#getDataMap(DataMapType)} and {@link IWithData#getData(DataMapType)}. <br>
- * You can usually go through {@linkplain net.minecraft.core.Holder#getData(DataMapType)} Holder} implementations in order to get the data of an object directly.
+ * You can access a data map using
+ * {@link net.neoforged.neoforge.registries.IRegistryExtension#neoforgedatapackextensions$getDataMap(DataMapType)} and
+ * {@link IWithData#neoforgedatapackextensions$getData(DataMapType)}. <br> You can usually go through
+ * {@linkplain net.minecraft.core.Holder#neoforgedatapackextensions$getData(DataMapType)} Holder} implementations in
+ * order to get the data of an object directly.
  *
  * @see AdvancedDataMapType for more functionality
  */
@@ -64,7 +67,8 @@ public sealed class DataMapType<R, T> permits AdvancedDataMapType {
     private final boolean mandatorySync;
 
     DataMapType(ResourceKey<Registry<R>> registryKey, ResourceLocation id, Codec<T> codec, @Nullable Codec<T> networkCodec, boolean mandatorySync) {
-        Preconditions.checkArgument(networkCodec != null || !mandatorySync, "Mandatory sync cannot be enabled when the attachment isn't synchronized");
+        Preconditions.checkArgument(networkCodec != null || !mandatorySync,
+                "Mandatory sync cannot be enabled when the attachment isn't synchronized");
 
         this.registryKey = Objects.requireNonNull(registryKey, "registryKey must not be null");
         this.id = Objects.requireNonNull(id, "id must not be null");
@@ -142,11 +146,11 @@ public sealed class DataMapType<R, T> permits AdvancedDataMapType {
         }
 
         /**
-         * Marks the data map as synced. <br>
-         * A synced data map will be sent to clients that support it.
+         * Marks the data map as synced. <br> A synced data map will be sent to clients that support it.
          *
          * @param networkCodec a codec used to sync the values
-         * @param mandatory    if {@code true}, clients that do not support this data map will not be able to connect to the server
+         * @param mandatory    if {@code true}, clients that do not support this data map will not be able to connect to
+         *                     the server
          * @return the builder instance
          */
         public Builder<T, R> synced(Codec<T> networkCodec, boolean mandatory) {

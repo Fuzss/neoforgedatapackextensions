@@ -13,9 +13,9 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Map;
 
 /**
- * An extension for {@link Registry}, adding some additional functionality to vanilla registries, such as
- * callbacks and ID limits.
- * 
+ * An extension for {@link Registry}, adding some additional functionality to vanilla registries, such as callbacks and
+ * ID limits.
+ *
  * @param <T> the type of registry entries
  */
 public interface IRegistryExtension<T> {
@@ -27,7 +27,7 @@ public interface IRegistryExtension<T> {
      * @param <A>  the data type
      */
     @Nullable
-    default <A> A getData(DataMapType<T, A> type, ResourceKey<T> key) {
+    default <A> A neoforgedatapackextensions$getData(DataMapType<T, A> type, ResourceKey<T> key) {
         throw new UnsupportedOperationException();
     }
 
@@ -36,7 +36,7 @@ public interface IRegistryExtension<T> {
      *
      * @param <A> the data type
      */
-    default <A> Map<ResourceKey<T>, A> getDataMap(DataMapType<T, A> type) {
+    default <A> Map<ResourceKey<T>, A> neoforgedatapackextensions$getDataMap(DataMapType<T, A> type) {
         throw new UnsupportedOperationException();
     }
 }

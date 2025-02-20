@@ -17,7 +17,7 @@ public final class FabricDataMapRegistry implements DataMapRegistry {
     @Override
     @Nullable
     public <R, T> T getData(DataMapToken<R, T> token, Holder<R> holder) {
-        return holder.getData(FabricDataMapToken.unwrap(token));
+        return holder.neoforgedatapackextensions$getData(FabricDataMapToken.unwrap(token));
     }
 
     @Override

@@ -6,7 +6,7 @@ import org.jetbrains.annotations.Nullable;
 public interface ILookupWithData<T> {
 
     @Nullable
-    default <A> A getData(DataMapType<T, A> attachment, ResourceKey<T> key) {
+    default <A> A neoforgedatapackextensions$getData(DataMapType<T, A> attachment, ResourceKey<T> key) {
         return null;
     }
 }
