@@ -4,9 +4,6 @@ import fuzs.neoforgedatapackextensions.impl.NeoForgeDataPackExtensions;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.event.lifecycle.v1.CommonLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
-import net.fabricmc.fabric.api.event.registry.DynamicRegistries;
-import net.fabricmc.fabric.api.event.registry.RegistryAttribute;
-import net.fabricmc.fabric.api.event.registry.RegistryAttributeHolder;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerConfigurationConnectionEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerConfigurationNetworking;
@@ -14,7 +11,7 @@ import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.Registry;
 import net.minecraft.core.RegistryAccess;
-import net.minecraft.resources.RegistryDataLoader;
+import net.minecraft.core.RegistrySynchronization;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
@@ -63,11 +60,7 @@ public class NeoForgeDataPackExtensionsFabric implements ModInitializer {
                 // Note: don't send data maps over in-memory connections for normal registries, else the client-side handling will wipe non-synced data maps.
                 // Sending them for synced datapack registries is fine and required as those registries are recreated on the client
                 if (player.connection.connection.isMemoryConnection() &&
-                        (!RegistryAttributeHolder.get(registry).hasAttribute(RegistryAttribute.SYNCED) ||
-                                DynamicRegistries.getDynamicRegistries()
-                                        .stream()
-                                        .noneMatch((RegistryDataLoader.RegistryData<?> registryData) -> registryData.key()
-                                                .equals(registry)))) {
+                        !RegistrySynchronization.isNetworkable(registry)) {
                     return;
                 }
                 final var playerMaps = player.connection.connection.channel.attr(RegistryManager.ATTRIBUTE_KNOWN_DATA_MAPS)
