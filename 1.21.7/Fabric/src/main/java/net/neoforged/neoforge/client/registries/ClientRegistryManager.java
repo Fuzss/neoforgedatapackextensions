@@ -3,10 +3,12 @@
  * SPDX-License-Identifier: LGPL-2.1-only
  */
 
-package net.neoforged.neoforge.registries;
+package net.neoforged.neoforge.client.registries;
 
 import com.google.common.collect.Sets;
 import com.mojang.logging.LogUtils;
+import fuzs.neoforgedatapackextensions.fabric.api.v1.DataMapsUpdatedCallback;
+import fuzs.neoforgedatapackextensions.fabric.impl.registries.datamaps.IRegistryWithData;
 import net.fabricmc.fabric.api.client.networking.v1.ClientConfigurationNetworking;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.ChatFormatting;
@@ -20,8 +22,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.neoforged.neoforge.network.payload.KnownRegistryDataMapsPayload;
 import net.neoforged.neoforge.network.payload.KnownRegistryDataMapsReplyPayload;
 import net.neoforged.neoforge.network.payload.RegistryDataMapSyncPayload;
-import fuzs.neoforgedatapackextensions.fabric.api.v1.DataMapsUpdatedCallback;
-import fuzs.neoforgedatapackextensions.fabric.impl.registries.datamaps.IRegistryWithData;
+import net.neoforged.neoforge.registries.RegistryManager;
 import org.jetbrains.annotations.ApiStatus;
 import org.slf4j.Logger;
 
@@ -39,7 +40,8 @@ public class ClientRegistryManager {
                 final MappedRegistry<R> registry = (MappedRegistry<R>) regAccess
                         .lookupOrThrow(payload.registryKey());
                 ((IRegistryWithData<R>) registry).neoforgedatapackextensions$getDataMaps().clear();
-                payload.dataMaps().forEach((attachKey, maps) -> ((IRegistryWithData<R>) registry).neoforgedatapackextensions$getDataMaps().put(RegistryManager.getDataMap(payload.registryKey(), attachKey), Collections.unmodifiableMap(maps)));
+                payload.dataMaps().forEach((attachKey, maps) -> ((IRegistryWithData<R>) registry).neoforgedatapackextensions$getDataMaps().put(
+                        RegistryManager.getDataMap(payload.registryKey(), attachKey), Collections.unmodifiableMap(maps)));
                 DataMapsUpdatedCallback.EVENT.invoker().onDataMapsUpdated(regAccess, registry, DataMapsUpdatedCallback.UpdateCause.CLIENT_SYNC);
             } catch (Throwable t) {
                 LOGGER.error("Failed to handle registry data map sync: ", t);
