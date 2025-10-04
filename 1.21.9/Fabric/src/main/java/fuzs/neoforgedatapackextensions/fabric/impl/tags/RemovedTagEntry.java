@@ -18,21 +18,24 @@ import java.util.stream.Stream;
  * the remove field is properly supported already.
  */
 public final class RemovedTagEntry extends TagEntry {
-    public static final Codec<TagFile> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-            TagEntry.CODEC.listOf()
-                    .fieldOf("values")
-                    .forGetter(tagFile -> tagFile.entries()
-                            .stream()
-                            .filter(Predicate.not(RemovedTagEntry.class::isInstance))
-                            .toList()),
-            Codec.BOOL.optionalFieldOf("replace", Boolean.FALSE).forGetter(TagFile::replace), TagEntry.CODEC.listOf()
-                    .optionalFieldOf("remove", List.of())
-                    .forGetter(tagFile -> tagFile.entries().stream().filter(RemovedTagEntry.class::isInstance).toList())
-    ).apply(instance, (List<TagEntry> values, Boolean replace, List<TagEntry> remove) -> {
-        // order is important here, so that removals take place after additions
-        values = Stream.concat(values.stream(), remove.stream().map(RemovedTagEntry::new)).toList();
-        return new TagFile(values, replace);
-    }));
+    public static final Codec<TagFile> CODEC = RecordCodecBuilder.create(instance -> instance.group(TagEntry.CODEC.listOf()
+                            .fieldOf("values")
+                            .forGetter(tagFile -> tagFile.entries()
+                                    .stream()
+                                    .filter(Predicate.not(RemovedTagEntry.class::isInstance))
+                                    .toList()),
+                    Codec.BOOL.optionalFieldOf("replace", Boolean.FALSE).forGetter(TagFile::replace),
+                    TagEntry.CODEC.listOf()
+                            .optionalFieldOf("remove", List.of())
+                            .forGetter(tagFile -> tagFile.entries()
+                                    .stream()
+                                    .filter(RemovedTagEntry.class::isInstance)
+                                    .toList()))
+            .apply(instance, (List<TagEntry> values, Boolean replace, List<TagEntry> remove) -> {
+                // order is important here, so that removals take place after additions
+                values = Stream.concat(values.stream(), remove.stream().map(RemovedTagEntry::new)).toList();
+                return new TagFile(values, replace);
+            }));
 
     private RemovedTagEntry(TagEntry tagEntry) {
         // it's ok to just pass these on, there is no other state being stored here

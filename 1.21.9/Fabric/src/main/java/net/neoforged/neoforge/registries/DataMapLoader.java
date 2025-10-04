@@ -26,7 +26,10 @@ import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.tags.TagKey;
 import net.minecraft.util.profiling.Profiler;
 import net.minecraft.util.profiling.ProfilerFiller;
-import net.neoforged.neoforge.registries.datamaps.*;
+import net.neoforged.neoforge.registries.datamaps.AdvancedDataMapType;
+import net.neoforged.neoforge.registries.datamaps.DataMapFile;
+import net.neoforged.neoforge.registries.datamaps.DataMapType;
+import net.neoforged.neoforge.registries.datamaps.DataMapValueMerger;
 import org.slf4j.Logger;
 
 import java.io.Reader;
@@ -35,7 +38,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.function.Consumer;
 
-@SuppressWarnings({ "rawtypes", "unchecked" })
+@SuppressWarnings({"rawtypes", "unchecked"})
 public class DataMapLoader implements PreparableReloadListener {
     private static final Logger LOGGER = LogUtils.getLogger();
     public static final String PATH = "data_maps";
@@ -47,8 +50,8 @@ public class DataMapLoader implements PreparableReloadListener {
     }
 
     @Override
-    public CompletableFuture<Void> reload(PreparationBarrier preparationBarrier, ResourceManager resourceManager, Executor backgroundExecutor, Executor gameExecutor) {
-        return this.load(resourceManager, backgroundExecutor, Profiler.get())
+    public CompletableFuture<Void> reload(SharedState sharedState, Executor backgroundExecutor, PreparationBarrier preparationBarrier, Executor gameExecutor) {
+        return this.load(sharedState.resourceManager(), backgroundExecutor, Profiler.get())
                 .thenCompose(preparationBarrier::wait)
                 .thenAcceptAsync(values -> this.results = values, gameExecutor);
     }
@@ -70,9 +73,11 @@ public class DataMapLoader implements PreparableReloadListener {
     }
 
     private <T, R> Map<ResourceKey<R>, T> buildDataMap(Registry<R> registry, DataMapType<R, T> attachment, List<DataMapFile<T, R>> entries) {
-        record WithSource<T, R>(T attachment, Either<TagKey<R>, ResourceKey<R>> source) {}
+        record WithSource<T, R>(T attachment, Either<TagKey<R>, ResourceKey<R>> source) {
+        }
         final Map<ResourceKey<R>, WithSource<T, R>> result = new IdentityHashMap<>();
-        final DataMapValueMerger<R, T> merger = attachment instanceof AdvancedDataMapType<R, T, ?> adv ? adv.merger() : DataMapValueMerger.defaultMerger();
+        final DataMapValueMerger<R, T> merger = attachment instanceof AdvancedDataMapType<R, T, ?> adv ? adv.merger() :
+                DataMapValueMerger.defaultMerger();
         entries.forEach(entry -> {
             if (entry.replace()) {
                 result.clear();
@@ -88,7 +93,12 @@ public class DataMapLoader implements PreparableReloadListener {
                     if (oldValue == null || newValue.replace()) {
                         result.put(key, new WithSource<>(newValue.value(), tKey));
                     } else {
-                        result.put(key, new WithSource<>(merger.merge(registry, oldValue.source(), oldValue.attachment(), tKey, newValue.value()), tKey));
+                        result.put(key,
+                                new WithSource<>(merger.merge(registry,
+                                        oldValue.source(),
+                                        oldValue.attachment(),
+                                        tKey,
+                                        newValue.value()), tKey));
                     }
                 });
             });
@@ -100,7 +110,10 @@ public class DataMapLoader implements PreparableReloadListener {
                         final var key = holder.unwrapKey().orElse(null);
                         final var oldValue = result.get(key);
                         if (oldValue != null) {
-                            final var newValue = remover.remove(oldValue.attachment(), registry, oldValue.source(), holder.value());
+                            final var newValue = remover.remove(oldValue.attachment(),
+                                    registry,
+                                    oldValue.source(),
+                                    holder.value());
                             if (newValue.isEmpty()) {
                                 result.remove(key);
                             } else {
@@ -127,7 +140,9 @@ public class DataMapLoader implements PreparableReloadListener {
             if (object.isPresent()) {
                 consumer.accept(object.get());
             } else if (required) {
-                LOGGER.error("Object with ID {} specified in data map for registry {} doesn't exist", value.right().orElseThrow().location(), registry.key().location());
+                LOGGER.error("Object with ID {} specified in data map for registry {} doesn't exist",
+                        value.right().orElseThrow().location(),
+                        registry.key().location());
             }
         }
     }
@@ -144,17 +159,20 @@ public class DataMapLoader implements PreparableReloadListener {
             final var registryKey = registryEntry.key();
             profiler.push("registry_data_maps/" + registryKey.location() + "/locating");
             final var fileToId = FileToIdConverter.json(PATH + "/" + getFolderLocation(registryKey.location()));
-            for (Map.Entry<ResourceLocation, List<Resource>> entry : fileToId.listMatchingResourceStacks(manager).entrySet()) {
+            for (Map.Entry<ResourceLocation, List<Resource>> entry : fileToId.listMatchingResourceStacks(manager)
+                    .entrySet()) {
                 ResourceLocation key = entry.getKey();
                 final ResourceLocation attachmentId = fileToId.fileToId(key);
                 final var attachment = RegistryManager.getDataMap((ResourceKey) registryKey, attachmentId);
                 if (attachment == null) {
-                    LOGGER.warn("Found data map file for non-existent data map type '{}' on registry '{}'.", attachmentId, registryKey.location());
+                    LOGGER.warn("Found data map file for non-existent data map type '{}' on registry '{}'.",
+                            attachmentId,
+                            registryKey.location());
                     continue;
                 }
                 profiler.popPush("registry_data_maps/" + registryKey.location() + "/" + attachmentId + "/loading");
-                values.computeIfAbsent(registryKey, k -> new LoadResult<>(new HashMap<>())).results.put(attachment, readData(
-                        ops, attachment, (ResourceKey) registryKey, entry.getValue()));
+                values.computeIfAbsent(registryKey, k -> new LoadResult<>(new HashMap<>())).results.put(attachment,
+                        readData(ops, attachment, (ResourceKey) registryKey, entry.getValue()));
             }
             profiler.pop();
         });
@@ -163,7 +181,8 @@ public class DataMapLoader implements PreparableReloadListener {
     }
 
     public static String getFolderLocation(ResourceLocation registryId) {
-        return (registryId.getNamespace().equals(ResourceLocation.DEFAULT_NAMESPACE) ? "" : registryId.getNamespace() + "/") + registryId.getPath();
+        return (registryId.getNamespace().equals(ResourceLocation.DEFAULT_NAMESPACE) ? "" :
+                registryId.getNamespace() + "/") + registryId.getPath();
     }
 
     private static <A, T> List<DataMapFile<A, T>> readData(RegistryOps<JsonElement> ops, DataMapType<T, A> attachmentType, ResourceKey<Registry<T>> registryKey, List<Resource> resources) {
@@ -174,11 +193,15 @@ public class DataMapLoader implements PreparableReloadListener {
                 JsonElement jsonelement = JsonParser.parseReader(reader);
                 entries.add(codec.decode(ops, jsonelement).getOrThrow().getFirst());
             } catch (Exception exception) {
-                LOGGER.error("Could not read data map of type {} for registry {}", attachmentType.id(), registryKey, exception);
+                LOGGER.error("Could not read data map of type {} for registry {}",
+                        attachmentType.id(),
+                        registryKey,
+                        exception);
             }
         }
         return entries;
     }
 
-    private record LoadResult<T>(Map<DataMapType<T, ?>, List<DataMapFile<?, T>>> results) {}
+    private record LoadResult<T>(Map<DataMapType<T, ?>, List<DataMapFile<?, T>>> results) {
+    }
 }

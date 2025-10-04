@@ -17,23 +17,19 @@ import java.util.List;
 @Mixin(ReloadableServerResources.class)
 abstract class ReloadableServerResourcesFabricMixin {
 
-    @ModifyExpressionValue(
-            method = "lambda$loadResources$1(Lnet/minecraft/world/flag/FeatureFlagSet;Lnet/minecraft/commands/Commands$CommandSelection;Ljava/util/List;ILnet/minecraft/server/packs/resources/ResourceManager;Ljava/util/concurrent/Executor;Ljava/util/concurrent/Executor;Lnet/minecraft/server/ReloadableServerRegistries$LoadResult;)Ljava/util/concurrent/CompletionStage;",
-            at = @At(
-                    value = "INVOKE",
-                    target = "Lnet/minecraft/server/ReloadableServerResources;listeners()Ljava/util/List;"
-            )
-    )
-    private static List<PreparableReloadListener> loadResources(List<PreparableReloadListener> listeners, @Local(
-            argsOnly = true
-    ) ReloadableServerRegistries.LoadResult loadResult) {
-        MutableObject<List<PreparableReloadListener>> mutableObject = new MutableObject<>(listeners);
-        NeoForgeDataPackExtensionsFabric.onAddDataPackReloadListeners(loadResult.layers().compositeAccess(),
+    @ModifyExpressionValue(method = "lambda$loadResources$1(Lnet/minecraft/world/flag/FeatureFlagSet;Lnet/minecraft/commands/Commands$CommandSelection;Ljava/util/List;ILnet/minecraft/server/packs/resources/ResourceManager;Ljava/util/concurrent/Executor;Ljava/util/concurrent/Executor;Lnet/minecraft/server/ReloadableServerRegistries$LoadResult;)Ljava/util/concurrent/CompletionStage;",
+            at = @At(value = "INVOKE",
+                    target = "Lnet/minecraft/server/ReloadableServerResources;listeners()Ljava/util/List;"))
+    private static List<PreparableReloadListener> loadResources(List<PreparableReloadListener> reloadListeners, @Local(
+            argsOnly = true) ReloadableServerRegistries.LoadResult loadResult, @Local ReloadableServerResources reloadableServerResources) {
+        MutableObject<List<PreparableReloadListener>> mutableObject = new MutableObject<>(reloadListeners);
+        NeoForgeDataPackExtensionsFabric.onAddDataPackReloadListeners(reloadableServerResources,
                 loadResult.lookupWithUpdatedTags(),
                 (ResourceLocation resourceLocation, PreparableReloadListener reloadListener) -> {
                     if (!(mutableObject.getValue() instanceof ArrayList<PreparableReloadListener>)) {
                         mutableObject.setValue(new ArrayList<>(mutableObject.getValue()));
                     }
+
                     mutableObject.getValue().add(reloadListener);
                 });
         return mutableObject.getValue();

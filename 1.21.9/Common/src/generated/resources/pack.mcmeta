@@ -1,0 +1,7 @@
+{
+  "pack": {
+    "description": "Support for NeoForge's data maps and tag removals on other mod loaders.",
+    "max_format": 88,
+    "min_format": 88
+  }
+}

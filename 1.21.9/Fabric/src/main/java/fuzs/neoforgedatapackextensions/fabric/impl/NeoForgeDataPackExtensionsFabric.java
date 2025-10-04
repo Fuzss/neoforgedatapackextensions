@@ -15,6 +15,7 @@ import net.minecraft.core.RegistrySynchronization;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.ReloadableServerResources;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.ServerConfigurationPacketListenerImpl;
 import net.minecraft.server.packs.resources.PreparableReloadListener;
@@ -52,15 +53,15 @@ public class NeoForgeDataPackExtensionsFabric implements ModInitializer {
         });
         ServerLifecycleEvents.SYNC_DATA_PACK_CONTENTS.register((ServerPlayer player, boolean joined) -> {
             RegistryManager.getDataMaps().forEach((registry, values) -> {
-                final var regOpt = player.getServer().overworld().registryAccess().lookup(registry);
+                final var regOpt = player.level().getServer().overworld().registryAccess().lookup(registry);
                 if (regOpt.isEmpty()) return;
                 if (!ServerPlayNetworking.canSend(player, RegistryDataMapSyncPayload.TYPE)) {
                     return;
                 }
                 // Note: don't send data maps over in-memory connections for normal registries, else the client-side handling will wipe non-synced data maps.
                 // Sending them for synced datapack registries is fine and required as those registries are recreated on the client
-                if (player.connection.connection.isMemoryConnection() &&
-                        !RegistrySynchronization.isNetworkable(registry)) {
+                if (player.connection.connection.isMemoryConnection()
+                        && !RegistrySynchronization.isNetworkable(registry)) {
                     return;
                 }
                 final var playerMaps = player.connection.connection.channel.attr(RegistryManager.ATTRIBUTE_KNOWN_DATA_MAPS)
@@ -71,9 +72,9 @@ public class NeoForgeDataPackExtensionsFabric implements ModInitializer {
         });
     }
 
-    public static void onAddDataPackReloadListeners(RegistryAccess fullRegistries, HolderLookup.Provider lookupWithUpdatedTags, BiConsumer<ResourceLocation, PreparableReloadListener> consumer) {
-        consumer.accept(NeoForgeDataPackExtensions.id(DataMapLoader.PATH),
-                dataMapLoader = new DataMapLoader(fullRegistries));
+    public static void onAddDataPackReloadListeners(ReloadableServerResources serverResources, HolderLookup.Provider lookupWithUpdatedTags, BiConsumer<ResourceLocation, PreparableReloadListener> reloadListenerConsumer) {
+        reloadListenerConsumer.accept(NeoForgeDataPackExtensions.id(DataMapLoader.PATH),
+                dataMapLoader = new DataMapLoader((RegistryAccess) serverResources.fullRegistries().lookup()));
     }
 
     private static <T> void handleSync(ServerPlayer player, Registry<T> registry, Collection<ResourceLocation> attachments) {
