@@ -15,7 +15,7 @@ import net.minecraft.server.packs.resources.SimplePreparableReloadListener;
 import net.minecraft.util.profiling.ProfilerFiller;
 
 /**
- * Event fired on the {@link net.neoforged.neoforge.common.NeoForge#EVENT_BUS game event bus} when the data maps of a
+ * Event fired on the {@code net.neoforged.neoforge.common.NeoForge#EVENT_BUS game event bus} when the data maps of a
  * registry have either been {@linkplain UpdateCause#CLIENT_SYNC synced to the client} or
  * {@linkplain UpdateCause#SERVER_RELOAD reloaded on the server}.
  * <p>
@@ -30,8 +30,7 @@ public interface DataMapsUpdatedCallback {
                 for (DataMapsUpdatedCallback callback : callbacks) {
                     callback.onDataMapsUpdated(registryAccess, registry, cause);
                 }
-            }
-    );
+            });
 
     /**
      * @param registryAccess {@return a registry access}

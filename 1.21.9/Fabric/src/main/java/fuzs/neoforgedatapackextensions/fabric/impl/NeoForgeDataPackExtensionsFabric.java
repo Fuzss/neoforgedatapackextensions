@@ -1,6 +1,6 @@
 package fuzs.neoforgedatapackextensions.fabric.impl;
 
-import fuzs.neoforgedatapackextensions.impl.NeoForgeDataPackExtensions;
+import fuzs.neoforgedatapackextensions.impl.NeoForgeDataPackExtensionsMod;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.event.lifecycle.v1.CommonLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
@@ -73,7 +73,7 @@ public class NeoForgeDataPackExtensionsFabric implements ModInitializer {
     }
 
     public static void onAddDataPackReloadListeners(ReloadableServerResources serverResources, HolderLookup.Provider lookupWithUpdatedTags, BiConsumer<ResourceLocation, PreparableReloadListener> reloadListenerConsumer) {
-        reloadListenerConsumer.accept(NeoForgeDataPackExtensions.id(DataMapLoader.PATH),
+        reloadListenerConsumer.accept(NeoForgeDataPackExtensionsMod.id(DataMapLoader.PATH),
                 dataMapLoader = new DataMapLoader((RegistryAccess) serverResources.fullRegistries().lookup()));
     }
 

@@ -5,7 +5,7 @@
 
 package net.neoforged.neoforge.registries;
 
-import fuzs.neoforgedatapackextensions.impl.NeoForgeDataPackExtensions;
+import fuzs.neoforgedatapackextensions.impl.NeoForgeDataPackExtensionsMod;
 import io.netty.util.AttributeKey;
 import net.fabricmc.fabric.api.networking.v1.ServerConfigurationNetworking;
 import net.minecraft.core.Registry;
@@ -71,7 +71,7 @@ public class RegistryManager {
     }
 
     public static final AttributeKey<Map<ResourceKey<? extends Registry<?>>, Collection<ResourceLocation>>> ATTRIBUTE_KNOWN_DATA_MAPS = AttributeKey.valueOf(
-            NeoForgeDataPackExtensions.id("known_data_maps").toString());
+            NeoForgeDataPackExtensionsMod.id("known_data_maps").toString());
 
     @ApiStatus.Internal
     public static void handleKnownDataMapsReply(final KnownRegistryDataMapsReplyPayload payload, final ServerConfigurationNetworking.Context context) {
