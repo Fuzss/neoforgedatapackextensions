@@ -5,7 +5,7 @@
 
 package net.neoforged.neoforge.registries;
 
-import fuzs.neoforgedatapackextensions.impl.NeoForgeDataPackExtensionsMod;
+import fuzs.neoforgedatapackextensions.impl.NeoForgeDataPackExtensions;
 import io.netty.util.AttributeKey;
 import net.fabricmc.fabric.api.networking.v1.ServerConfigurationNetworking;
 import net.minecraft.core.Registry;
@@ -56,22 +56,22 @@ public class RegistryManager {
             if (type.networkCodec() != null && RegistryDataLoader.SYNCHRONIZED_REGISTRIES.stream()
                     .noneMatch(data -> data.key().equals(registry))) {
                 throw new UnsupportedOperationException(
-                        "Cannot register synced data map " + type.id() + " for datapack registry " +
-                                registry.location() + " that is not synced!");
+                        "Cannot register synced data map " + type.id() + " for datapack registry " + registry.location()
+                                + " that is not synced!");
             }
         }
 
         final var map = dataMaps.computeIfAbsent((ResourceKey) registry, k -> new HashMap<>());
         if (map.containsKey(type.id())) {
             throw new IllegalArgumentException(
-                    "Tried to register data map type with ID " + type.id() + " to registry " + registry.location() +
-                            " twice");
+                    "Tried to register data map type with ID " + type.id() + " to registry " + registry.location()
+                            + " twice");
         }
         map.put(type.id(), type);
     }
 
     public static final AttributeKey<Map<ResourceKey<? extends Registry<?>>, Collection<ResourceLocation>>> ATTRIBUTE_KNOWN_DATA_MAPS = AttributeKey.valueOf(
-            NeoForgeDataPackExtensionsMod.id("known_data_maps").toString());
+            NeoForgeDataPackExtensions.id("known_data_maps").toString());
 
     @ApiStatus.Internal
     public static void handleKnownDataMapsReply(final KnownRegistryDataMapsReplyPayload payload, final ServerConfigurationNetworking.Context context) {
