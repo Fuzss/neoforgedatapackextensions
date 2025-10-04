@@ -2,7 +2,7 @@ package fuzs.neoforgedatapackextensions.neoforge.mixin;
 
 import com.google.common.collect.ImmutableSet;
 import fuzs.neoforgedatapackextensions.impl.NeoForgeDataPackExtensions;
-import fuzs.neoforgedatapackextensions.neoforge.impl.NeoForgeDataPackExtensionsNeoForge;
+import net.neoforged.fml.loading.FMLEnvironment;
 import org.objectweb.asm.tree.ClassNode;
 import org.spongepowered.asm.mixin.extensibility.IMixinConfigPlugin;
 import org.spongepowered.asm.mixin.extensibility.IMixinInfo;
@@ -26,8 +26,16 @@ public class MixinConfigPluginNeoForgeImpl implements IMixinConfigPlugin {
 
     @Override
     public boolean shouldApplyMixin(String targetClassName, String mixinClassName) {
-        return NeoForgeDataPackExtensionsNeoForge.isDevelopmentEnvironment(NeoForgeDataPackExtensions.MOD_ID)
-                || !DEVELOPMENT_MIXINS.contains(mixinClassName.replaceAll(".+\\.mixin\\.", ""));
+        return this.isDevelopmentEnvironment(NeoForgeDataPackExtensions.MOD_ID) || !DEVELOPMENT_MIXINS.contains(
+                mixinClassName.replaceAll(".+\\.mixin\\.", ""));
+    }
+
+    private boolean isDevelopmentEnvironment(String modId) {
+        if (FMLEnvironment.isProduction()) {
+            return false;
+        } else {
+            return Boolean.getBoolean(modId + ".isDevelopmentEnvironment");
+        }
     }
 
     @Override
