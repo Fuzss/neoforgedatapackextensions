@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 1,
+  "id": "${modId}",
+  "version": "${modVersion}",
+
+  "name": "${modName}",
+  "description": "${modDescription}",
+
+  "authors": [
+    "${modAuthor}"
+  ],
+
+  "contact": {
+    "homepage": "${modPageUrl}",
+    "issues": "${modIssueUrl}",
+    "sources": "${modPageUrl}"
+  },
+
+  "license": "${modLicense}",
+  "icon": "mod_logo.png",
+
+  "environment": "${modFabricEnvironment}",
+
+  "entrypoints": {
+    "main": [
+      "${modGroup}.fabric.impl.NeoForgeDataPackExtensionsFabric"
+    ],
+    "client": [
+      "${modGroup}.fabric.impl.client.NeoForgeDataPackExtensionsFabricClient"
+    ]
+  },
+
+  "mixins": [
+    "${modId}.common.mixins.json",
+    "${modId}.fabric.mixins.json"
+  ],
+
+  "depends": {
+    "fabricloader": ">=${minFabricVersion}",
+    "fabric-api": ">=${minFabricApiVersion}",
+    "minecraft": ">=${minecraftVersion}- <${upcomingMinecraftVersion}-"
+  },
+
+  "custom": {
+    "loom:injected_interfaces": {
+      "net/minecraft/class_6880": [
+        "net/neoforged/neoforge/registries/datamaps/IWithData<TT;>"
+      ],
+      "net/minecraft/class_2378": [
+        "net/neoforged/neoforge/registries/IRegistryExtension<TT;>"
+      ],
+      "net/minecraft/class_7225\u0024class_7226": [
+        "net/neoforged/neoforge/registries/datamaps/ILookupWithData<TT;>"
+      ]
+    },
+    "modmenu": {
+      "badges": [
+        "library"
+      ]
+    }
+  }
+}
