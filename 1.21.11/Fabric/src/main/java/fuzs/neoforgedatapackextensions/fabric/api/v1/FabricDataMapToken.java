@@ -4,9 +4,9 @@ import com.mojang.serialization.Codec;
 import fuzs.neoforgedatapackextensions.api.v1.DataMapToken;
 import net.minecraft.core.Registry;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.neoforged.neoforge.registries.datamaps.DataMapType;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 public record FabricDataMapToken<R, T>(DataMapType<R, T> type) implements DataMapToken<R, T> {
 
@@ -16,7 +16,7 @@ public record FabricDataMapToken<R, T>(DataMapType<R, T> type) implements DataMa
     }
 
     @Override
-    public ResourceLocation id() {
+    public Identifier id() {
         return this.type.id();
     }
 

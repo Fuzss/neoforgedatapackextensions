@@ -5,7 +5,7 @@ import net.minecraft.core.MappedRegistry;
 import net.minecraft.resources.ResourceKey;
 import net.neoforged.neoforge.registries.IRegistryExtension;
 import net.neoforged.neoforge.registries.datamaps.DataMapType;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 
@@ -14,8 +14,7 @@ import java.util.Map;
 
 @Mixin(MappedRegistry.class)
 abstract class MappedRegistryFabricMixin<T> implements IRegistryExtension<T>, IRegistryWithData<T> {
-    @Unique
-    final Map<DataMapType<T, ?>, Map<ResourceKey<T>, ?>> neoforgedatapackextensions$dataMaps = new IdentityHashMap<>();
+    @Unique final Map<DataMapType<T, ?>, Map<ResourceKey<T>, ?>> neoforgedatapackextensions$dataMaps = new IdentityHashMap<>();
 
     @Override
     public <A> @Nullable A neoforgedatapackextensions$getData(DataMapType<T, A> type, ResourceKey<T> key) {

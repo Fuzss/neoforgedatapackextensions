@@ -1,0 +1,36 @@
+{
+    "mod": {
+        "id": "neoforgedatapackextensions",
+        "group": "fuzs.neoforgedatapackextensions",
+        "name": "NeoForge Data Pack Extensions",
+        "version": "21.11.0",
+        "authors": [
+            "Fuzs"
+        ],
+        "description": "Support for NeoForge's data maps and tag removals on other mod loaders.",
+        "license": "MPL-2.0"
+    },
+    "dependencies": [
+        {
+            "name": "fabricapi",
+            "type": "required",
+            "platforms": [
+                "fabric"
+            ]
+        }
+    ],
+    "links": [
+        {
+            "name": "github",
+            "slug": "neoforgedatapackextensions"
+        }
+    ],
+    "environments": {
+        "client": "required",
+        "server": "required"
+    },
+    "platforms": [
+        "fabric",
+        "neoforge"
+    ]
+}

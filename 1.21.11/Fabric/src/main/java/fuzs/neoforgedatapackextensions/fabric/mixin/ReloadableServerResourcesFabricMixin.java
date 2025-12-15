@@ -3,7 +3,7 @@ package fuzs.neoforgedatapackextensions.fabric.mixin;
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import com.llamalad7.mixinextras.sugar.Local;
 import fuzs.neoforgedatapackextensions.fabric.impl.NeoForgeDataPackExtensionsFabric;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.ReloadableServerRegistries;
 import net.minecraft.server.ReloadableServerResources;
 import net.minecraft.server.packs.resources.PreparableReloadListener;
@@ -25,7 +25,7 @@ abstract class ReloadableServerResourcesFabricMixin {
         MutableObject<List<PreparableReloadListener>> mutableObject = new MutableObject<>(reloadListeners);
         NeoForgeDataPackExtensionsFabric.onAddDataPackReloadListeners(reloadableServerResources,
                 loadResult.lookupWithUpdatedTags(),
-                (ResourceLocation resourceLocation, PreparableReloadListener reloadListener) -> {
+                (Identifier identifier, PreparableReloadListener reloadListener) -> {
                     if (!(mutableObject.getValue() instanceof ArrayList<PreparableReloadListener>)) {
                         mutableObject.setValue(new ArrayList<>(mutableObject.getValue()));
                     }

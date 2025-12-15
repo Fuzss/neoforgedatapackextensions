@@ -6,27 +6,28 @@ import fuzs.neoforgedatapackextensions.api.v1.DataMapToken;
 import fuzs.neoforgedatapackextensions.fabric.api.v1.FabricDataMapToken;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
+import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
 import net.neoforged.neoforge.registries.RegistryManager;
 import net.neoforged.neoforge.registries.datamaps.DataMapType;
-import org.jetbrains.annotations.Nullable;
+import net.neoforged.neoforge.registries.datamaps.IWithData;
+import org.jspecify.annotations.Nullable;
 
 public final class FabricDataMapRegistry implements DataMapRegistry {
 
     @Override
     @Nullable
     public <R, T> T getData(DataMapToken<R, T> token, Holder<R> holder) {
-        return holder.neoforgedatapackextensions$getData(FabricDataMapToken.unwrap(token));
+        return ((IWithData<R>) holder).neoforgedatapackextensions$getData(FabricDataMapToken.unwrap(token));
     }
 
     @Override
-    public <R, T> DataMapToken<R, T> register(ResourceLocation id, ResourceKey<Registry<R>> registry, Codec<T> codec) {
+    public <R, T> DataMapToken<R, T> register(Identifier id, ResourceKey<Registry<R>> registry, Codec<T> codec) {
         return this.register(DataMapType.builder(id, registry, codec).build());
     }
 
     @Override
-    public <R, T> DataMapToken<R, T> register(ResourceLocation id, ResourceKey<Registry<R>> registry, Codec<T> codec, Codec<T> networkCodec, boolean mandatory) {
+    public <R, T> DataMapToken<R, T> register(Identifier id, ResourceKey<Registry<R>> registry, Codec<T> codec, Codec<T> networkCodec, boolean mandatory) {
         return this.register(DataMapType.builder(id, registry, codec).synced(networkCodec, mandatory).build());
     }
 

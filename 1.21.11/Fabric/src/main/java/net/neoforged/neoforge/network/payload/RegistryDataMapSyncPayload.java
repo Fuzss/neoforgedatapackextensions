@@ -22,7 +22,7 @@ import net.minecraft.network.codec.StreamDecoder;
 import net.minecraft.network.codec.StreamEncoder;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.GsonHelper;
 import net.neoforged.neoforge.registries.RegistryManager;
 import net.neoforged.neoforge.registries.datamaps.DataMapType;
@@ -35,8 +35,8 @@ import java.util.function.BiFunction;
 @ApiStatus.Internal
 @SuppressWarnings({ "unchecked", "rawtypes" })
 public record RegistryDataMapSyncPayload<T>(ResourceKey<? extends Registry<T>> registryKey,
-                                            Map<ResourceLocation, Map<ResourceKey<T>, ?>> dataMaps) implements CustomPacketPayload {
-    public static final Type<RegistryDataMapSyncPayload<?>> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(
+                                            Map<Identifier, Map<ResourceKey<T>, ?>> dataMaps) implements CustomPacketPayload {
+    public static final Type<RegistryDataMapSyncPayload<?>> TYPE = new Type<>(Identifier.fromNamespaceAndPath(
             NeoForgeDataPackExtensions.MOD_ID, "registry_data_map_sync"));
     public static final StreamCodec<RegistryFriendlyByteBuf, RegistryDataMapSyncPayload<?>> STREAM_CODEC = StreamCodec.ofMember(
             RegistryDataMapSyncPayload::write, RegistryDataMapSyncPayload::decode);
@@ -44,7 +44,7 @@ public record RegistryDataMapSyncPayload<T>(ResourceKey<? extends Registry<T>> r
     public static <T> RegistryDataMapSyncPayload<T> decode(RegistryFriendlyByteBuf buf) {
         //noinspection RedundantCast javac complains about this cast
         final ResourceKey<Registry<T>> registryKey = (ResourceKey<Registry<T>>) (Object) buf.readRegistryKey();
-        final Map<ResourceLocation, Map<ResourceKey<T>, ?>> attach = readMap(buf, FriendlyByteBuf::readResourceLocation, (b1, key) -> {
+        final Map<Identifier, Map<ResourceKey<T>, ?>> attach = readMap(buf, FriendlyByteBuf::readIdentifier, (b1, key) -> {
             final DataMapType<T, ?> dataMap = RegistryManager.getDataMap(registryKey, key);
             return b1.readMap(bf -> bf.readResourceKey(registryKey), bf -> readJsonWithRegistryCodec((RegistryFriendlyByteBuf) bf, dataMap.networkCodec()));
         });
@@ -53,7 +53,7 @@ public record RegistryDataMapSyncPayload<T>(ResourceKey<? extends Registry<T>> r
 
     public void write(RegistryFriendlyByteBuf buf) {
         buf.writeResourceKey(registryKey);
-        writeMap(buf, dataMaps, FriendlyByteBuf::writeResourceLocation, (b1, key, attach) -> {
+        writeMap(buf, dataMaps, FriendlyByteBuf::writeIdentifier, (b1, key, attach) -> {
             final DataMapType<T, ?> dataMap = RegistryManager.getDataMap(registryKey, key);
             // TODO - make datamaps use stream codecs once datapack registries use them too
             b1.writeMap(attach, FriendlyByteBuf::writeResourceKey, (bf, value) -> writeJsonWithRegistryCodec((RegistryFriendlyByteBuf) bf, (Codec) dataMap.networkCodec(), value));

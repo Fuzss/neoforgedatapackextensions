@@ -8,7 +8,7 @@ package net.neoforged.neoforge.registries;
 import net.minecraft.core.Registry;
 import net.minecraft.resources.ResourceKey;
 import net.neoforged.neoforge.registries.datamaps.DataMapType;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Map;
 
@@ -27,8 +27,7 @@ public interface IRegistryExtension<T> {
      * @param key  the object to get the value for
      * @param <A>  the data type
      */
-    @Nullable
-    default <A> A neoforgedatapackextensions$getData(DataMapType<T, A> type, ResourceKey<T> key) {
+    @Nullable default <A> A neoforgedatapackextensions$getData(DataMapType<T, A> type, ResourceKey<T> key) {
         throw new UnsupportedOperationException();
     }
 

@@ -13,7 +13,7 @@ import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.jetbrains.annotations.ApiStatus;
 
 import java.util.List;
@@ -21,12 +21,12 @@ import java.util.Map;
 
 @ApiStatus.Internal
 public record KnownRegistryDataMapsPayload(Map<ResourceKey<? extends Registry<?>>, List<KnownDataMap>> dataMaps) implements CustomPacketPayload {
-    public static final Type<KnownRegistryDataMapsPayload> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(
+    public static final Type<KnownRegistryDataMapsPayload> TYPE = new Type<>(Identifier.fromNamespaceAndPath(
             NeoForgeDataPackExtensions.MOD_ID, "known_registry_data_maps"));
     public static final StreamCodec<FriendlyByteBuf, KnownRegistryDataMapsPayload> STREAM_CODEC = StreamCodec.composite(
             ByteBufCodecs.map(
                     Maps::newHashMapWithExpectedSize,
-                    ResourceLocation.STREAM_CODEC.map(ResourceKey::createRegistryKey, ResourceKey::location),
+                    Identifier.STREAM_CODEC.map(ResourceKey::createRegistryKey, ResourceKey::identifier),
                     KnownDataMap.STREAM_CODEC.apply(ByteBufCodecs.list())),
             KnownRegistryDataMapsPayload::dataMaps,
             KnownRegistryDataMapsPayload::new);
@@ -36,9 +36,9 @@ public record KnownRegistryDataMapsPayload(Map<ResourceKey<? extends Registry<?>
         return TYPE;
     }
 
-    public record KnownDataMap(ResourceLocation id, boolean mandatory) {
+    public record KnownDataMap(Identifier id, boolean mandatory) {
         public static final StreamCodec<FriendlyByteBuf, KnownDataMap> STREAM_CODEC = StreamCodec.composite(
-                ResourceLocation.STREAM_CODEC,
+                Identifier.STREAM_CODEC,
                 KnownDataMap::id,
                 ByteBufCodecs.BOOL,
                 KnownDataMap::mandatory,

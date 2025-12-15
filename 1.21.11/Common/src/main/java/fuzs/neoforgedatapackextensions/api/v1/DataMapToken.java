@@ -3,9 +3,9 @@ package fuzs.neoforgedatapackextensions.api.v1;
 import com.mojang.serialization.Codec;
 import net.minecraft.core.Registry;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 @ApiStatus.NonExtendable
 public interface DataMapToken<R, T> {
@@ -18,7 +18,7 @@ public interface DataMapToken<R, T> {
     /**
      * {@return the ID of this data map}
      */
-    ResourceLocation id();
+    Identifier id();
 
     /**
      * {@return the codec used to decode values}

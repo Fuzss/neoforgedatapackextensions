@@ -9,8 +9,8 @@ import com.google.common.base.Preconditions;
 import com.mojang.serialization.Codec;
 import net.minecraft.core.Registry;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
-import org.jetbrains.annotations.Nullable;
+import net.minecraft.resources.Identifier;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Objects;
 
@@ -23,7 +23,7 @@ import java.util.Objects;
  * }</pre>
  *
  * <p>
- * The {@code registry namespace} is omitted if it is {@value ResourceLocation#DEFAULT_NAMESPACE}. <br> The structure of
+ * The {@code registry namespace} is omitted if it is {@value Identifier#DEFAULT_NAMESPACE}. <br> The structure of
  * the json file is as follows:
  *
  * <pre>
@@ -61,12 +61,12 @@ import java.util.Objects;
  */
 public sealed class DataMapType<R, T> permits AdvancedDataMapType {
     private final ResourceKey<Registry<R>> registryKey;
-    private final ResourceLocation id;
+    private final Identifier id;
     private final Codec<T> codec;
     private final @Nullable Codec<T> networkCodec;
     private final boolean mandatorySync;
 
-    DataMapType(ResourceKey<Registry<R>> registryKey, ResourceLocation id, Codec<T> codec, @Nullable Codec<T> networkCodec, boolean mandatorySync) {
+    DataMapType(ResourceKey<Registry<R>> registryKey, Identifier id, Codec<T> codec, @Nullable Codec<T> networkCodec, boolean mandatorySync) {
         Preconditions.checkArgument(networkCodec != null || !mandatorySync,
                 "Mandatory sync cannot be enabled when the attachment isn't synchronized");
 
@@ -86,7 +86,7 @@ public sealed class DataMapType<R, T> permits AdvancedDataMapType {
      * @param <T>      the type of the data map
      * @param <R>      the registry the data is for
      */
-    public static <T, R> Builder<T, R> builder(ResourceLocation id, ResourceKey<Registry<R>> registry, Codec<T> codec) {
+    public static <T, R> Builder<T, R> builder(Identifier id, ResourceKey<Registry<R>> registry, Codec<T> codec) {
         return new Builder<>(registry, id, codec);
     }
 
@@ -100,7 +100,7 @@ public sealed class DataMapType<R, T> permits AdvancedDataMapType {
     /**
      * {@return the ID of this data map}
      */
-    public ResourceLocation id() {
+    public Identifier id() {
         return id;
     }
 
@@ -133,13 +133,13 @@ public sealed class DataMapType<R, T> permits AdvancedDataMapType {
      */
     public static sealed class Builder<T, R> permits AdvancedDataMapType.Builder {
         protected final ResourceKey<Registry<R>> registryKey;
-        protected final ResourceLocation id;
+        protected final Identifier id;
         protected final Codec<T> codec;
 
         protected @Nullable Codec<T> networkCodec;
         protected boolean mandatorySync;
 
-        Builder(ResourceKey<Registry<R>> registryKey, ResourceLocation id, Codec<T> codec) {
+        Builder(ResourceKey<Registry<R>> registryKey, Identifier id, Codec<T> codec) {
             this.registryKey = registryKey;
             this.id = id;
             this.codec = codec;

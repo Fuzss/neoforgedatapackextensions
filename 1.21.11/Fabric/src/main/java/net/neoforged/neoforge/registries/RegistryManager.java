@@ -11,12 +11,12 @@ import net.fabricmc.fabric.api.networking.v1.ServerConfigurationNetworking;
 import net.minecraft.core.Registry;
 import net.minecraft.resources.RegistryDataLoader;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.neoforged.neoforge.network.configuration.RegistryDataMapNegotiation;
 import net.neoforged.neoforge.network.payload.KnownRegistryDataMapsReplyPayload;
 import net.neoforged.neoforge.registries.datamaps.DataMapType;
 import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -25,10 +25,9 @@ import java.util.Map;
 
 @ApiStatus.Internal
 public class RegistryManager {
-    private static Map<ResourceKey<Registry<?>>, Map<ResourceLocation, DataMapType<?, ?>>> dataMaps = new IdentityHashMap<>();
+    private static Map<ResourceKey<Registry<?>>, Map<Identifier, DataMapType<?, ?>>> dataMaps = new IdentityHashMap<>();
 
-    @Nullable
-    public static <R> DataMapType<R, ?> getDataMap(ResourceKey<? extends Registry<R>> registry, ResourceLocation key) {
+    @Nullable public static <R> DataMapType<R, ?> getDataMap(ResourceKey<? extends Registry<R>> registry, Identifier key) {
         final var map = dataMaps.get(registry);
         return map == null ? null : (DataMapType<R, ?>) map.get(key);
     }
@@ -36,7 +35,7 @@ public class RegistryManager {
     /**
      * {@return a view of all registered data maps}
      */
-    public static Map<ResourceKey<Registry<?>>, Map<ResourceLocation, DataMapType<?, ?>>> getDataMaps() {
+    public static Map<ResourceKey<Registry<?>>, Map<Identifier, DataMapType<?, ?>>> getDataMaps() {
         return dataMaps;
     }
 
@@ -56,7 +55,7 @@ public class RegistryManager {
             if (type.networkCodec() != null && RegistryDataLoader.SYNCHRONIZED_REGISTRIES.stream()
                     .noneMatch(data -> data.key().equals(registry))) {
                 throw new UnsupportedOperationException(
-                        "Cannot register synced data map " + type.id() + " for datapack registry " + registry.location()
+                        "Cannot register synced data map " + type.id() + " for datapack registry " + registry.identifier()
                                 + " that is not synced!");
             }
         }
@@ -64,13 +63,13 @@ public class RegistryManager {
         final var map = dataMaps.computeIfAbsent((ResourceKey) registry, k -> new HashMap<>());
         if (map.containsKey(type.id())) {
             throw new IllegalArgumentException(
-                    "Tried to register data map type with ID " + type.id() + " to registry " + registry.location()
+                    "Tried to register data map type with ID " + type.id() + " to registry " + registry.identifier()
                             + " twice");
         }
         map.put(type.id(), type);
     }
 
-    public static final AttributeKey<Map<ResourceKey<? extends Registry<?>>, Collection<ResourceLocation>>> ATTRIBUTE_KNOWN_DATA_MAPS = AttributeKey.valueOf(
+    public static final AttributeKey<Map<ResourceKey<? extends Registry<?>>, Collection<Identifier>>> ATTRIBUTE_KNOWN_DATA_MAPS = AttributeKey.valueOf(
             NeoForgeDataPackExtensions.id("known_data_maps").toString());
 
     @ApiStatus.Internal

@@ -12,8 +12,8 @@ import net.minecraft.core.HolderLookup;
 import net.minecraft.core.Registry;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.RegistrySynchronization;
+import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.ReloadableServerResources;
 import net.minecraft.server.level.ServerPlayer;
@@ -24,8 +24,9 @@ import net.neoforged.neoforge.network.payload.KnownRegistryDataMapsPayload;
 import net.neoforged.neoforge.network.payload.KnownRegistryDataMapsReplyPayload;
 import net.neoforged.neoforge.network.payload.RegistryDataMapSyncPayload;
 import net.neoforged.neoforge.registries.DataMapLoader;
+import net.neoforged.neoforge.registries.IRegistryExtension;
 import net.neoforged.neoforge.registries.RegistryManager;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.util.*;
 import java.util.function.BiConsumer;
@@ -72,18 +73,18 @@ public class NeoForgeDataPackExtensionsFabric implements ModInitializer {
         });
     }
 
-    public static void onAddDataPackReloadListeners(ReloadableServerResources serverResources, HolderLookup.Provider lookupWithUpdatedTags, BiConsumer<ResourceLocation, PreparableReloadListener> reloadListenerConsumer) {
+    public static void onAddDataPackReloadListeners(ReloadableServerResources serverResources, HolderLookup.Provider lookupWithUpdatedTags, BiConsumer<Identifier, PreparableReloadListener> reloadListenerConsumer) {
         reloadListenerConsumer.accept(NeoForgeDataPackExtensions.id(DataMapLoader.PATH),
                 dataMapLoader = new DataMapLoader((RegistryAccess) serverResources.fullRegistries().lookup()));
     }
 
-    private static <T> void handleSync(ServerPlayer player, Registry<T> registry, Collection<ResourceLocation> attachments) {
+    private static <T> void handleSync(ServerPlayer player, Registry<T> registry, Collection<Identifier> attachments) {
         if (attachments.isEmpty()) return;
-        final Map<ResourceLocation, Map<ResourceKey<T>, ?>> att = new HashMap<>();
+        final Map<Identifier, Map<ResourceKey<T>, ?>> att = new HashMap<>();
         attachments.forEach(key -> {
             final var attach = RegistryManager.getDataMap(registry.key(), key);
             if (attach == null || attach.networkCodec() == null) return;
-            att.put(key, registry.neoforgedatapackextensions$getDataMap(attach));
+            att.put(key, ((IRegistryExtension<T>) registry).neoforgedatapackextensions$getDataMap(attach));
         });
         if (!att.isEmpty()) {
             ServerPlayNetworking.send(player, new RegistryDataMapSyncPayload<>(registry.key(), att));

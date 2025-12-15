@@ -6,4 +6,5 @@ import org.spongepowered.asm.mixin.Mixin;
 
 @Mixin(Registry.class)
 interface RegistryFabricMixin<T> extends IRegistryExtension<T> {
+
 }

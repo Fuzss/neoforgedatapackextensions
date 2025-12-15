@@ -7,6 +7,7 @@ package net.neoforged.neoforge.registries.datamaps;
 
 import com.mojang.datafixers.util.Either;
 import com.mojang.serialization.Codec;
+import com.mojang.serialization.MapCodec;
 import net.minecraft.core.Registry;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.tags.TagKey;
@@ -14,8 +15,8 @@ import net.minecraft.tags.TagKey;
 import java.util.Optional;
 
 /**
- * An interface used to remove values from registry data maps. This allows "decomposing" the data
- * and removing only a specific part of it (like a specific key in the case of {@linkplain java.util.Map map-based} data).
+ * An interface used to remove values from registry data maps. This allows "decomposing" the data and removing only a
+ * specific part of it (like a specific key in the case of {@linkplain java.util.Map map-based} data).
  *
  * @param <T> the data type
  * @param <R> the type of the registry this remover is for
@@ -26,13 +27,13 @@ public interface DataMapValueRemover<R, T> {
     /**
      * Remove the entry specified in this remover from the {@code value}.
      *
-     * @param value    the data to remove. Do <b>NOT</b> mutate this object. You should return copies instead,
-     *                 if you need to
+     * @param value    the data to remove. Do <b>NOT</b> mutate this object. You should return copies instead, if you
+     *                 need to
      * @param registry the registry
      * @param source   the source of the data
      * @param object   the object to remove the data from
-     * @return the remainder. If an {@link Optional#empty() empty optional}, the value will be removed
-     *         completely. Otherwise, this method returns the new value of the attached data.
+     * @return the remainder. If an {@link Optional#empty() empty optional}, the value will be removed completely.
+     *         Otherwise, this method returns the new value of the attached data.
      */
     Optional<T> remove(T value, Registry<R> registry, Either<TagKey<R>, ResourceKey<R>> source, R object);
 
@@ -50,10 +51,11 @@ public interface DataMapValueRemover<R, T> {
         }
 
         public static <T, R> Codec<Default<T, R>> codec() {
-            return Codec.unit(defaultRemover());
+            return MapCodec.unitCodec(defaultRemover());
         }
 
-        private Default() {}
+        private Default() {
+        }
 
         @Override
         public Optional<T> remove(T value, Registry<R> registry, Either<TagKey<R>, ResourceKey<R>> source, R object) {

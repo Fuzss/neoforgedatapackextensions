@@ -4,7 +4,7 @@ import net.minecraft.core.HolderLookup;
 import net.minecraft.resources.ResourceKey;
 import net.neoforged.neoforge.registries.datamaps.DataMapType;
 import net.neoforged.neoforge.registries.datamaps.ILookupWithData;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 
@@ -16,6 +16,6 @@ interface HolderLookup$RegistryLookup$DelegateFabricMixin<T> extends HolderLooku
 
     @Override
     default <A> @Nullable A neoforgedatapackextensions$getData(DataMapType<T, A> attachment, ResourceKey<T> key) {
-        return this.parent().neoforgedatapackextensions$getData(attachment, key);
+        return ((ILookupWithData<T>) this.parent()).neoforgedatapackextensions$getData(attachment, key);
     }
 }
