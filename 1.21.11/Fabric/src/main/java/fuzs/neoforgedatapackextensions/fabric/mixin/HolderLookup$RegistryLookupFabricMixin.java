@@ -6,4 +6,5 @@ import org.spongepowered.asm.mixin.Mixin;
 
 @Mixin(HolderLookup.RegistryLookup.class)
 interface HolderLookup$RegistryLookupFabricMixin<T> extends ILookupWithData<T> {
+
 }

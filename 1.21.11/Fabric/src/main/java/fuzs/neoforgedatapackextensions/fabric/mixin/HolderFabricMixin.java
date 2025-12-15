@@ -6,4 +6,5 @@ import org.spongepowered.asm.mixin.Mixin;
 
 @Mixin(Holder.class)
 interface HolderFabricMixin<T> extends IWithData<T> {
+
 }

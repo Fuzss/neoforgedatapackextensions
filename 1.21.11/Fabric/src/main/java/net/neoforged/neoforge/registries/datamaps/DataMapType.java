@@ -54,7 +54,7 @@ import java.util.Objects;
  * You can access a data map using
  * {@link net.neoforged.neoforge.registries.IRegistryExtension#neoforgedatapackextensions$getDataMap(DataMapType)} and
  * {@link IWithData#neoforgedatapackextensions$getData(DataMapType)}. <br> You can usually go through
- * {@linkplain net.minecraft.core.Holder#neoforgedatapackextensions$getData(DataMapType)} Holder} implementations in
+ * {@linkplain net.minecraft.core.Holder Holder} implementations in
  * order to get the data of an object directly.
  *
  * @see AdvancedDataMapType for more functionality

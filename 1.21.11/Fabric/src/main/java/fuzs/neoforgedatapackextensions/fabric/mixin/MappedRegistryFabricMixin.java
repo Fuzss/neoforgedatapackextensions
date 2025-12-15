@@ -14,7 +14,8 @@ import java.util.Map;
 
 @Mixin(MappedRegistry.class)
 abstract class MappedRegistryFabricMixin<T> implements IRegistryExtension<T>, IRegistryWithData<T> {
-    @Unique final Map<DataMapType<T, ?>, Map<ResourceKey<T>, ?>> neoforgedatapackextensions$dataMaps = new IdentityHashMap<>();
+    @Unique
+    final Map<DataMapType<T, ?>, Map<ResourceKey<T>, ?>> neoforgedatapackextensions$dataMaps = new IdentityHashMap<>();
 
     @Override
     public <A> @Nullable A neoforgedatapackextensions$getData(DataMapType<T, A> type, ResourceKey<T> key) {

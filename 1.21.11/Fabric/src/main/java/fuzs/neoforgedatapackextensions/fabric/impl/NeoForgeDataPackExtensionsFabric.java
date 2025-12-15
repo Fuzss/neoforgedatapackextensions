@@ -8,6 +8,7 @@ import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerConfigurationConnectionEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerConfigurationNetworking;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+import net.fabricmc.fabric.api.resource.v1.DataResourceLoader;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.Registry;
 import net.minecraft.core.RegistryAccess;
@@ -18,7 +19,6 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.ReloadableServerResources;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.ServerConfigurationPacketListenerImpl;
-import net.minecraft.server.packs.resources.PreparableReloadListener;
 import net.neoforged.neoforge.network.configuration.RegistryDataMapNegotiation;
 import net.neoforged.neoforge.network.payload.KnownRegistryDataMapsPayload;
 import net.neoforged.neoforge.network.payload.KnownRegistryDataMapsReplyPayload;
@@ -28,10 +28,13 @@ import net.neoforged.neoforge.registries.IRegistryExtension;
 import net.neoforged.neoforge.registries.RegistryManager;
 import org.jspecify.annotations.Nullable;
 
+import java.lang.ref.WeakReference;
 import java.util.*;
-import java.util.function.BiConsumer;
 
 public class NeoForgeDataPackExtensionsFabric implements ModInitializer {
+    private static final ThreadLocal<WeakReference<ReloadableServerResources>> RELOADABLE_SERVER_RESOURCES_REFERENCE = ThreadLocal.withInitial(
+            () -> new WeakReference<>(null));
+
     @Nullable
     private static DataMapLoader dataMapLoader;
 
@@ -39,6 +42,15 @@ public class NeoForgeDataPackExtensionsFabric implements ModInitializer {
     public void onInitialize() {
         registerEventHandlers();
         registerNetworkMessages();
+        DataResourceLoader.get()
+                .registerReloader(NeoForgeDataPackExtensions.id(DataMapLoader.PATH),
+                        (HolderLookup.Provider registries) -> {
+                            ReloadableServerResources reloadableServerResources = RELOADABLE_SERVER_RESOURCES_REFERENCE.get()
+                                    .get();
+                            Objects.requireNonNull(reloadableServerResources, "reloadable server resources is null");
+                            return dataMapLoader = new DataMapLoader((RegistryAccess) reloadableServerResources.fullRegistries()
+                                    .lookup());
+                        });
     }
 
     private static void registerEventHandlers() {
@@ -73,9 +85,8 @@ public class NeoForgeDataPackExtensionsFabric implements ModInitializer {
         });
     }
 
-    public static void onAddDataPackReloadListeners(ReloadableServerResources serverResources, HolderLookup.Provider lookupWithUpdatedTags, BiConsumer<Identifier, PreparableReloadListener> reloadListenerConsumer) {
-        reloadListenerConsumer.accept(NeoForgeDataPackExtensions.id(DataMapLoader.PATH),
-                dataMapLoader = new DataMapLoader((RegistryAccess) serverResources.fullRegistries().lookup()));
+    public static void setReloadableServerResources(ReloadableServerResources reloadableServerResources) {
+        RELOADABLE_SERVER_RESOURCES_REFERENCE.set(new WeakReference<>(reloadableServerResources));
     }
 
     private static <T> void handleSync(ServerPlayer player, Registry<T> registry, Collection<Identifier> attachments) {
